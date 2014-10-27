@@ -73,6 +73,19 @@ public class InputConsole {
         return new String(line);
     }
 
+    private static InputStream wrappedInputStream = new InputStream() {
+        @Override
+        public int read() throws IOException {
+            return consoleProxyReader.read0();
+        }
+
+        @Override
+        public void close() throws IOException {
+            consoleProxyReader.release0();
+        }
+    };
+
+
     /** return -1 if no data */
     public static final int read() {
         return consoleProxyReader.read0();
@@ -84,17 +97,7 @@ public class InputConsole {
     }
 
     public static InputStream getInputStream() {
-        return new InputStream() {
-            @Override
-            public int read() throws IOException {
-                return consoleProxyReader.read0();
-            }
-
-            @Override
-            public void close() throws IOException {
-                consoleProxyReader.release0();
-            }
-        };
+        return wrappedInputStream;
     }
 
     public static void echo(boolean enableEcho) {
