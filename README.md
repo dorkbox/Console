@@ -13,9 +13,9 @@ This small library is very similar to what JLine provides, however it does 4 thi
 4. Multi-threaded, intelligent buffering of command input for simultaneous input readers on different threads  
 
 
-This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 6+
+- This is for cross-platform use, specifically - linux 32/64, mac 32/64, and windows 32/64. Java 6+
+- ANSI output to console is also supported, and is required for backspace functionality to work if echo is enabled.
 
-ANSI output to console is also supported, and is required for backspace functionality to work if echo is enabled.
 
 ```
 Note: If you use the attached JNA/JAnsi libraries, you **MUST** load the respective
