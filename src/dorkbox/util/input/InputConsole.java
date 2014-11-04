@@ -1,5 +1,19 @@
+/*
+ * Copyright 2010 dorkbox, llc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package dorkbox.util.input;
-
 
 import java.io.File;
 import java.io.IOException;
@@ -122,6 +136,7 @@ public class InputConsole {
     private List<ObjectPoolHolder<ByteBuffer2>> readLineBuffers = new CopyOnWriteArrayList<ObjectPoolHolder<ByteBuffer2>>();
 
     private final Terminal terminal;
+    private final Boolean enableBackspace;
 
     private InputConsole() {
         Logger logger = InputConsole.logger;
@@ -195,6 +210,7 @@ public class InputConsole {
         t.setEchoEnabled(true);
 
         this.terminal = t;
+        this.enableBackspace = Boolean.parseBoolean(System.getProperty(TerminalType.ENABLE_BACKSPACE, "true"));
         logger.debug("Created Terminal: {} ({}x{})", t.getClass().getSimpleName(), t.getWidth(), t.getHeight());
     }
 
@@ -370,7 +386,7 @@ public class InputConsole {
                 // now to handle readLine stuff
 
                 // if we type a backspace key, swallow it + previous in READLINE. READCHAR will have it passed.
-                if (asChar == '\b') {
+                if (this.enableBackspace && asChar == '\b') {
                     int position = 0;
 
                     // clear ourself + one extra.

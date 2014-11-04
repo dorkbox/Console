@@ -1,10 +1,18 @@
 /*
- * Copyright (c) 2002-2012, the original author or authors.
+ *  Licensed to the Apache Software Foundation (ASF) under one or more
+ *  contributor license agreements.  See the NOTICE file distributed with
+ *  this work for additional information regarding copyright ownership.
+ *  The ASF licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
- * This software is distributable under the BSD license. See the terms of the
- * BSD license in the documentation provided with this software.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.opensource.org/licenses/bsd-license.php
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package dorkbox.util.input.posix;
 
@@ -31,8 +39,8 @@ import java.nio.charset.UnmappableCharacterException;
  * We thus use the harmony code which only reads the minimal number of bytes,
  * with a modification to ensure we can read larger characters (UTF-16 has
  * up to 4 bytes, and UTF-32, rare as it is, may have up to 8).
- */
-/**
+ *
+ *
  * A class for turning a byte stream into a character stream. Data read from the
  * source input stream is converted into characters by either a default or a
  * provided character converter. The default encoding is taken from the
