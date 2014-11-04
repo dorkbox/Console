@@ -23,6 +23,6 @@ Note: If you use the attached JNA/JAnsi libraries, you **MUST** load the respect
       been removed from the jar)
 ```
 ```
-Note: This project was inspired (and some parts heavily modified) by the excellent JLine library, and
-      includes utility classes/methods from a variety of sources.
+Note: This project was inspired (and some parts heavily modified) by the excellent 
+      JLine library, and includes utility classes/methods from a variety of sources.
 ```
