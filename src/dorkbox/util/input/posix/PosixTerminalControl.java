@@ -15,69 +15,71 @@
  */
 package dorkbox.util.input.posix;
 
-import java.nio.ByteBuffer;
-
 import com.sun.jna.Library;
 
-public interface PosixTerminalControl extends Library {
-    public static final int TCSANOW = 0;
-    public static final int TBUFLEN = 124;
+import java.nio.ByteBuffer;
 
-    // Definitions at: http://linux.die.net/man/3/termios
-    // also: http://code.metager.de/source/xref/DragonFly-BSD/sys/sys/termios.h
-    public static final int IGNBRK = 0x00000001;  /* ignore BREAK condition */
-    public static final int BRKINT = 0x00000002;  /* map BREAK to SIGINTR */
+@SuppressWarnings("ALL")
+interface PosixTerminalControl extends Library {
 
+  public static final int TCSANOW = 0;
+  public static final int TBUFLEN = 124;
 
-    public static final int ISIG   = 0000001;
-    public static final int ICANON = 0000002;
-    public static final int ECHO   = 0000010;
-    public static final int IXON   = 0002000;
+  // Definitions at: http://linux.die.net/man/3/termios
+  // also: http://code.metager.de/source/xref/DragonFly-BSD/sys/sys/termios.h
+  public static final int IGNBRK = 0x00000001;  /* ignore BREAK condition */
+  public static final int BRKINT = 0x00000002;  /* map BREAK to SIGINTR */
 
 
-    public static final int VINTR    =  0;
-    public static final int VQUIT    =  1;
-    public static final int VERASE   =  2;
-    public static final int VKILL    =  3;
-    public static final int VEOF     =  4;
-    public static final int VTIME    =  5;
-    public static final int VMIN     =  6;
-    public static final int VSWTC    =  7;
-    public static final int VSTART   =  8;
-    public static final int VSTOP    =  9;
-    public static final int VSUSP    = 10;
-    public static final int VEOL     = 11;
-    public static final int VREPRINT = 12;
-    public static final int VDISCARD = 13;
-    public static final int VWERASE  = 14;
-    public static final int VLNEXT   = 15;
-    public static final int VEOL2    = 16;
+  public static final int ISIG = 0000001;
+  public static final int ICANON = 0000002;
+  public static final int ECHO = 0000010;
+  public static final int IXON = 0002000;
 
-    // MAGIC!
-    public static final int TIOCGWINSZ = System.getProperty("os.name").equalsIgnoreCase("linux") ? 0x5413 : 1074295912;
 
-    public int open(String path, int flags);
+  public static final int VINTR = 0;
+  public static final int VQUIT = 1;
+  public static final int VERASE = 2;
+  public static final int VKILL = 3;
+  public static final int VEOF = 4;
+  public static final int VTIME = 5;
+  public static final int VMIN = 6;
+  public static final int VSWTC = 7;
+  public static final int VSTART = 8;
+  public static final int VSTOP = 9;
+  public static final int VSUSP = 10;
+  public static final int VEOL = 11;
+  public static final int VREPRINT = 12;
+  public static final int VDISCARD = 13;
+  public static final int VWERASE = 14;
+  public static final int VLNEXT = 15;
+  public static final int VEOL2 = 16;
 
-    public int close(int fd);
+  // MAGIC!
+  public static final int TIOCGWINSZ = System.getProperty("os.name").equalsIgnoreCase("linux") ? 0x5413 : 1074295912;
 
-    /**
-     * Original signature : <code>int ioctl(int, int, char*)</code><br>
-     */
-    public int ioctl(int d, int request, ByteBuffer data);
+  public int open(String path, int flags);
 
-    /**
-     * Put the state of FD into *TERMIOS_P.<br>
-     *
-     * Original signature : <code>int tcgetattr(int, char*)</code><br>
-     */
-    public int tcgetattr(int fd, TermiosStruct termios_p);
+  public int close(int fd);
 
-    /**
-     * Set the state of FD to *TERMIOS_P.<br>
-     *
-     * Values for OPTIONAL_ACTIONS (TCSA*) are in <bits/termios.h>.<br>
-     *
-     * Original signature : <code>int tcsetattr(int, int, char*)</code><br>
-     */
-    public int tcsetattr(int fd, int optional_actions, TermiosStruct termios_p);
+  /**
+   * Original signature : <code>int ioctl(int, int, char*)</code><br>
+   */
+  public int ioctl(int d, int request, ByteBuffer data);
+
+  /**
+   * Put the state of FD into *TERMIOS_P.<br>
+   *
+   * Original signature : <code>int tcgetattr(int, char*)</code><br>
+   */
+  public int tcgetattr(int fd, TermiosStruct termios_p);
+
+  /**
+   * Set the state of FD to *TERMIOS_P.<br>
+   *
+   * Values for OPTIONAL_ACTIONS (TCSA*) are in <bits/termios.h>.<br>
+   *
+   * Original signature : <code>int tcsetattr(int, int, char*)</code><br>
+   */
+  public int tcsetattr(int fd, int optional_actions, TermiosStruct termios_p);
 }
