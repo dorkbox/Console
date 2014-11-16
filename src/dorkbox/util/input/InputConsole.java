@@ -255,6 +255,7 @@ public class InputConsole {
 
             ObjectPoolHolder<ByteBuffer2> holder = this.pool.take();
             buffer = holder.getValue();
+            buffer.clear();
             this.readBuff.set(holder);
             this.readBuffers.add(holder);
         } else {
