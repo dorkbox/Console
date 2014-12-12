@@ -176,47 +176,52 @@ public class InputConsole {
             }
         }
 
-        Terminal t;
+        Class<? extends Terminal> t;
         try {
             if (type.equals(TerminalType.UNIX)) {
-                t = new UnixTerminal();
+                t = UnixTerminal.class;
             } else if (type.equals(TerminalType.WIN) || type.equals(TerminalType.WINDOWS)) {
-                t = new WindowsTerminal();
+                t = WindowsTerminal.class;
             } else if (type.equals(TerminalType.NONE) || type.equals(TerminalType.OFF) || type.equals(TerminalType.FALSE)) {
-                t = new UnsupportedTerminal();
+                t = UnsupportedTerminal.class;
             } else {
                 if (isIDEAutoDetect()) {
                     logger.debug("Terminal is in UNSUPPORTED (best guess). Unable to support single key input. Only line input available.");
-                    t = new UnsupportedTerminal();
+                    t = UnsupportedTerminal.class;
                 } else {
                     if (OS.isWindows()) {
-                        t = new WindowsTerminal();
+                        t = WindowsTerminal.class;
                     } else {
-                        t = new UnixTerminal();
+                        t = UnixTerminal.class;
                     }
                 }
             }
         } catch (Exception e) {
-            logger.error("Failed to construct terminal, falling back to unsupported");
-            t = new UnsupportedTerminal();
+            logger.error("Failed to construct terminal, falling back to unsupported.");
+            t = UnsupportedTerminal.class;
         }
 
+        Terminal terminal = null;
         try {
-            t.init();
+            terminal = t.newInstance();
+            terminal.init();
         } catch (Throwable e) {
-            logger.error("Terminal initialization failed, falling back to unsupported");
-            t = new UnsupportedTerminal();
+            logger.error("Terminal initialization failed for {}, falling back to unsupported.", t.getSimpleName());
+            t = UnsupportedTerminal.class;
 
             try {
-                t.init();
-            } catch (IOException e1) {
+                terminal = t.newInstance();
+                terminal.init();
+            } catch (Exception e1) {
                 // UnsupportedTerminal can't do this
             }
         }
 
-        t.setEchoEnabled(true);
+        if (terminal != null) {
+            terminal.setEchoEnabled(true);
+        }
 
-        this.terminal = t;
+        this.terminal = terminal;
         this.enableBackspace = Boolean.parseBoolean(System.getProperty(TerminalType.ENABLE_BACKSPACE, "true"));
     }
 
