@@ -35,9 +35,9 @@ import dorkbox.util.bytes.ByteBuffer2Poolable;
 import dorkbox.util.input.posix.UnixTerminal;
 import dorkbox.util.input.unsupported.UnsupportedTerminal;
 import dorkbox.util.input.windows.WindowsTerminal;
-import dorkbox.util.objectPool.ObjectPool;
-import dorkbox.util.objectPool.ObjectPoolFactory;
-import dorkbox.util.objectPool.ObjectPoolHolder;
+import dorkbox.objectPool.ObjectPool;
+import dorkbox.objectPool.ObjectPoolFactory;
+import dorkbox.objectPool.ObjectPoolHolder;
 
 public class InputConsole {
 

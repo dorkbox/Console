@@ -7,5 +7,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/Dorkbox-Util"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JavaLauncher-Util"/>
 	<classpathentry kind="lib" path="libs/slf4j-api-1.7.5.jar" sourcepath="libs/slf4j-api-1.7.5-sources.zip"/>
+	<classpathentry kind="lib" path="libs/ObjectPool_v1.0.jar"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

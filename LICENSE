@@ -13,22 +13,6 @@
       Copyright 2010, dorkbox, llc
 
 
-    - FastObjectPool - Apache 2.0 License
-      http://ashkrit.blogspot.com/2013/05/lock-less-java-object-pool.html
-      https://github.com/ashkrit/blog/tree/master/FastObjectPool
-      Copyright 2013, Ashkrit
-
-
-    - hawtjni - Apache 2.0 License
-      https://github.com/fusesource/hawtjni
-      Copyright Hiram Chirino
-
-
-    - Jansi - Apache 2.0 License
-      https://github.com/fusesource/jansi
-      Copyright Hiram Chirino
-
-
     - JLine2 - BSD License
       https://github.com/jline/jline2
       Copyright 2002-2006, Marc Prud'hommeaux <mwp1@cornell.edu>
@@ -41,5 +25,5 @@
 
 
     - SLF4J - MIT License
-      http://www.slf4j.org/
+      http://www.slf4j.org
       Copyright 2004-2008, QOS.ch
