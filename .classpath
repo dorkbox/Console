@@ -4,9 +4,8 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="libs/jansi/jansi-1.11b.jar" sourcepath="libs/jansi/jansi-1.11b-source.zip"/>
 	<classpathentry kind="lib" path="libs/jna/jna-4.1.0.jar" sourcepath="libs/jna/jna-4.1.0-sources.zip"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/JavaLauncher-Util"/>
 	<classpathentry kind="lib" path="libs/slf4j-api-1.7.5.jar" sourcepath="libs/slf4j-api-1.7.5-sources.zip"/>
-	<classpathentry kind="lib" path="libs/ObjectPool_v1.0.jar"/>
-	<classpathentry kind="lib" path="libs/dorkboxUtil_v1.0.jar" sourcepath="libs/dorkboxUtil_v1.0_src.zip"/>
+	<classpathentry kind="lib" path="libs/ObjectPool_v1.1.jar" sourcepath="libs/ObjectPool_v1.1_src.zip"/>
+	<classpathentry kind="lib" path="libs/dorkboxUtil_v1.1.jar"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>
