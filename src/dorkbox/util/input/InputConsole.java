@@ -15,6 +15,18 @@
  */
 package dorkbox.util.input;
 
+import dorkbox.util.OS;
+import dorkbox.util.bytes.ByteBuffer2;
+import dorkbox.util.bytes.ByteBuffer2Poolable;
+import dorkbox.util.input.posix.UnixTerminal;
+import dorkbox.util.input.unsupported.UnsupportedTerminal;
+import dorkbox.util.input.windows.WindowsTerminal;
+import dorkbox.util.objectPool.ObjectPool;
+import dorkbox.util.objectPool.ObjectPoolFactory;
+import org.fusesource.jansi.Ansi;
+import org.fusesource.jansi.AnsiConsole;
+import org.slf4j.Logger;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,21 +37,8 @@ import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.fusesource.jansi.Ansi;
-import org.fusesource.jansi.AnsiConsole;
-import org.slf4j.Logger;
-
-import dorkbox.util.OS;
-import dorkbox.util.bytes.ByteBuffer2;
-import dorkbox.util.bytes.ByteBuffer2Poolable;
-import dorkbox.util.input.posix.UnixTerminal;
-import dorkbox.util.input.unsupported.UnsupportedTerminal;
-import dorkbox.util.input.windows.WindowsTerminal;
-import dorkbox.util.objectPool.ObjectPool;
-import dorkbox.util.objectPool.ObjectPoolFactory;
-import dorkbox.util.objectPool.ObjectPoolHolder;
-
-public class InputConsole {
+public
+class InputConsole {
 
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(InputConsole.class);
     private static final InputConsole consoleProxyReader = new InputConsole();
@@ -51,7 +50,8 @@ public class InputConsole {
 
         Thread consoleThread = new Thread(new Runnable() {
             @Override
-            public void run() {
+            public
+            void run() {
                 consoleProxyReader.run();
             }
         });
@@ -66,7 +66,8 @@ public class InputConsole {
         // alternatively, shut everything down when the JVM closes.
         Thread shutdownThread = new Thread() {
             @Override
-            public void run() {
+            public
+            void run() {
                 AnsiConsole.systemUninstall();
 
                 consoleProxyReader.shutdown0();
@@ -79,30 +80,33 @@ public class InputConsole {
     /**
      * Permit our InputConsole to be initialized
      */
-    public static void init() {
+    public static
+    void init() {
         if (logger.isDebugEnabled()) {
             logger.debug("Created Terminal: {} ({}w x {}h)", consoleProxyReader.terminal.getClass().getSimpleName(),
-                                                             consoleProxyReader.terminal.getWidth(),
-                                                             consoleProxyReader.terminal.getHeight());
+                         consoleProxyReader.terminal.getWidth(), consoleProxyReader.terminal.getHeight());
         }
     }
 
     /**
      * return null if no data
      */
-    public static String readLine() {
+    public static
+    String readLine() {
         char[] line = consoleProxyReader.readLine0();
         return new String(line);
     }
 
     private static InputStream wrappedInputStream = new InputStream() {
         @Override
-        public int read() throws IOException {
+        public
+        int read() throws IOException {
             return consoleProxyReader.read0();
         }
 
         @Override
-        public void close() throws IOException {
+        public
+        void close() throws IOException {
             consoleProxyReader.release0();
         }
     };
@@ -111,26 +115,31 @@ public class InputConsole {
     /**
      * return -1 if no data
      */
-    public static int read() {
+    public static
+    int read() {
         return consoleProxyReader.read0();
     }
 
     /**
      * return null if no data
      */
-    public static char[] readLinePassword() {
+    public static
+    char[] readLinePassword() {
         return consoleProxyReader.readLinePassword0();
     }
 
-    public static InputStream getInputStream() {
+    public static
+    InputStream getInputStream() {
         return wrappedInputStream;
     }
 
-    public static void echo(boolean enableEcho) {
+    public static
+    void echo(boolean enableEcho) {
         consoleProxyReader.echo0(enableEcho);
     }
 
-    public static boolean echo() {
+    public static
+    boolean echo() {
         return consoleProxyReader.echo0();
     }
 
@@ -140,17 +149,18 @@ public class InputConsole {
 
     private final ObjectPool<ByteBuffer2> pool;
 
-    private ThreadLocal<ObjectPoolHolder<ByteBuffer2>> readBuff = new ThreadLocal<ObjectPoolHolder<ByteBuffer2>>();
-    private List<ObjectPoolHolder<ByteBuffer2>> readBuffers = new CopyOnWriteArrayList<ObjectPoolHolder<ByteBuffer2>>();
+    private ThreadLocal<ByteBuffer2> readBuff = new ThreadLocal<ByteBuffer2>();
+    private List<ByteBuffer2> readBuffers = new CopyOnWriteArrayList<ByteBuffer2>();
     private ThreadLocal<Integer> threadBufferCounter = new ThreadLocal<Integer>();
 
-    private ThreadLocal<ObjectPoolHolder<ByteBuffer2>> readLineBuff = new ThreadLocal<ObjectPoolHolder<ByteBuffer2>>();
-    private List<ObjectPoolHolder<ByteBuffer2>> readLineBuffers = new CopyOnWriteArrayList<ObjectPoolHolder<ByteBuffer2>>();
+    private ThreadLocal<ByteBuffer2> readLineBuff = new ThreadLocal<ByteBuffer2>();
+    private List<ByteBuffer2> readLineBuffers = new CopyOnWriteArrayList<ByteBuffer2>();
 
     private final Terminal terminal;
     private final Boolean enableBackspace;
 
-    private InputConsole() {
+    private
+    InputConsole() {
         Logger logger = InputConsole.logger;
 
         String readers = System.getProperty(TerminalType.READERS);
@@ -170,7 +180,8 @@ public class InputConsole {
             if (logger.isTraceEnabled()) {
                 logger.trace("System environment 'TERM'=dumb, creating type=" + type);
             }
-        } else {
+        }
+        else {
             if (logger.isTraceEnabled()) {
                 logger.trace("Creating terminal, type=" + type);
             }
@@ -180,18 +191,23 @@ public class InputConsole {
         try {
             if (type.equals(TerminalType.UNIX)) {
                 t = UnixTerminal.class;
-            } else if (type.equals(TerminalType.WIN) || type.equals(TerminalType.WINDOWS)) {
+            }
+            else if (type.equals(TerminalType.WIN) || type.equals(TerminalType.WINDOWS)) {
                 t = WindowsTerminal.class;
-            } else if (type.equals(TerminalType.NONE) || type.equals(TerminalType.OFF) || type.equals(TerminalType.FALSE)) {
+            }
+            else if (type.equals(TerminalType.NONE) || type.equals(TerminalType.OFF) || type.equals(TerminalType.FALSE)) {
                 t = UnsupportedTerminal.class;
-            } else {
+            }
+            else {
                 if (isIDEAutoDetect()) {
                     logger.debug("Terminal is in UNSUPPORTED (best guess). Unable to support single key input. Only line input available.");
                     t = UnsupportedTerminal.class;
-                } else {
+                }
+                else {
                     if (OS.isWindows()) {
                         t = WindowsTerminal.class;
-                    } else {
+                    }
+                    else {
                         t = UnixTerminal.class;
                     }
                 }
@@ -226,7 +242,8 @@ public class InputConsole {
     }
 
     // called when the JVM is shutting down.
-    private void shutdown0() {
+    private
+    void shutdown0() {
         synchronized (this.inputLockSingle) {
             this.inputLockSingle.notifyAll();
         }
@@ -246,33 +263,38 @@ public class InputConsole {
         }
     }
 
-    private void echo0(boolean enableEcho) {
+    private
+    void echo0(boolean enableEcho) {
         this.terminal.setEchoEnabled(enableEcho);
     }
 
-    private boolean echo0() {
+    private
+    boolean echo0() {
         return this.terminal.isEchoEnabled();
     }
 
     /**
      * return -1 if no data or bunged-up
      */
-    private int read0() {
+    private
+    int read0() {
         Integer bufferCounter = this.threadBufferCounter.get();
-        ObjectPoolHolder<ByteBuffer2> objectPoolHolder = this.readBuff.get();
-        ByteBuffer2 buffer;
+        ByteBuffer2 buffer = this.readBuff.get();
 
-        if (objectPoolHolder == null) {
+        if (buffer == null) {
             bufferCounter = 0;
             this.threadBufferCounter.set(bufferCounter);
 
-            ObjectPoolHolder<ByteBuffer2> holder = this.pool.take();
-            buffer = holder.getValue();
-            buffer.clear();
-            this.readBuff.set(holder);
-            this.readBuffers.add(holder);
-        } else {
-            buffer = objectPoolHolder.getValue();
+            try {
+                buffer = this.pool.take();
+                buffer.clear();
+            } catch (InterruptedException e) {
+                logger.error("Interrupted while receiving buffer from pool.");
+                buffer = pool.newInstance();
+            }
+
+            this.readBuff.set(buffer);
+            this.readBuffers.add(buffer);
         }
 
         if (bufferCounter == buffer.position()) {
@@ -299,7 +321,8 @@ public class InputConsole {
     /**
      * return empty char[] if no data
      */
-    private char[] readLinePassword0() {
+    private
+    char[] readLinePassword0() {
         // don't bother in an IDE. it won't work.
         boolean echoEnabled = this.terminal.isEchoEnabled();
         this.terminal.setEchoEnabled(false);
@@ -312,18 +335,27 @@ public class InputConsole {
     /**
      * return empty char[] if no data
      */
-    private char[] readLine0() {
+    private
+    char[] readLine0() {
         synchronized (this.inputLock) {
             // empty here, because we don't want to register a readLine WHILE we are still processing
             // the current line info.
 
             // the threadBufferForRead getting added is the part that is important
             if (this.readLineBuff.get() == null) {
-                ObjectPoolHolder<ByteBuffer2> holder = this.pool.take();
-                this.readLineBuff.set(holder);
-                this.readLineBuffers.add(holder);
-            } else {
-                this.readLineBuff.get().getValue().clear();
+                ByteBuffer2 buffer;
+                try {
+                    buffer = this.pool.take();
+                } catch (InterruptedException e) {
+                    logger.error("Interrupted while receiving buffer from pool.");
+                    buffer = pool.newInstance();
+                }
+
+                this.readLineBuff.set(buffer);
+                this.readLineBuffers.add(buffer);
+            }
+            else {
+                this.readLineBuff.get().clear();
             }
         }
 
@@ -335,8 +367,7 @@ public class InputConsole {
             }
         }
 
-        ObjectPoolHolder<ByteBuffer2> objectPoolHolder = this.readLineBuff.get();
-        ByteBuffer2 buffer = objectPoolHolder.getValue();
+        ByteBuffer2 buffer = this.readLineBuff.get();
         int len = buffer.position();
         if (len == 0) {
             return emptyLine;
@@ -348,8 +379,8 @@ public class InputConsole {
         // dump the chars in the buffer (safer for passwords, etc)
         buffer.clearSecure();
 
-        this.readLineBuffers.remove(objectPoolHolder);
-        this.pool.release(objectPoolHolder);
+        this.readLineBuffers.remove(buffer);
+        this.pool.release(buffer);
         this.readLineBuff.set(null);
 
         return readChars;
@@ -358,7 +389,8 @@ public class InputConsole {
     /**
      * releases any thread still waiting.
      */
-    private void release0() {
+    private
+    void release0() {
         synchronized (this.inputLockSingle) {
             this.inputLockSingle.notifyAll();
         }
@@ -368,7 +400,8 @@ public class InputConsole {
         }
     }
 
-    private void run() {
+    private
+    void run() {
         Logger logger2 = logger;
 
         final boolean ansiEnabled = Ansi.isEnabled();
@@ -392,8 +425,7 @@ public class InputConsole {
                 // notify everyone waiting for a character.
                 synchronized (this.inputLockSingle) {
                     // have to do readChar first (readLine has to deal with \b and \n
-                    for (ObjectPoolHolder<ByteBuffer2> objectPoolHolder : this.readBuffers) {
-                        ByteBuffer2 buffer = objectPoolHolder.getValue();
+                    for (ByteBuffer2 buffer : this.readBuffers) {
                         buffer.writeChar(asChar);
                     }
 
@@ -408,8 +440,7 @@ public class InputConsole {
 
                     // clear ourself + one extra.
                     if (ansiEnabled) {
-                        for (ObjectPoolHolder<ByteBuffer2> objectPoolHolder : this.readLineBuffers) {
-                            ByteBuffer2 buffer = objectPoolHolder.getValue();
+                        for (ByteBuffer2 buffer : this.readLineBuffers) {
                             // size of the buffer BEFORE our backspace was typed
                             int length = buffer.position();
                             int amtToOverwrite = 2 * 2; // backspace is always 2 chars (^?) * 2 because it's bytes
@@ -445,16 +476,17 @@ public class InputConsole {
                             out.flush();
                         }
                     }
-                } else if (asChar == '\n') {
+                }
+                else if (asChar == '\n') {
                     // ignoring \r, because \n is ALWAYS the last character in a new line sequence. (even for windows)
                     synchronized (this.inputLockLine) {
                         this.inputLockLine.notifyAll();
                     }
-                } else {
+                }
+                else {
                     // only append if we are not a new line.
                     // our windows console PREVENTS us from returning '\r' (it truncates '\r\n', and returns just '\n')
-                    for (ObjectPoolHolder<ByteBuffer2> objectPoolHolder : this.readLineBuffers) {
-                        ByteBuffer2 buffer = objectPoolHolder.getValue();
+                    for (ByteBuffer2 buffer : this.readLineBuffers) {
                         buffer.writeChar(asChar);
                     }
                 }
@@ -465,7 +497,8 @@ public class InputConsole {
     /**
      * try to guess if we are running inside an IDE
      */
-    private boolean isIDEAutoDetect() {
+    private
+    boolean isIDEAutoDetect() {
         try {
             // Get the location of this class
             ProtectionDomain pDomain = getClass().getProtectionDomain();
@@ -486,21 +519,24 @@ public class InputConsole {
 
     /**
      * Return the number of characters that will be printed when the specified character is echoed to the screen
-     *
+     * <p/>
      * Adapted from cat by Torbjorn Granlund, as repeated in stty by David MacKenzie.
      */
-    private static int getPrintableCharacters(final int ch) {
+    private static
+    int getPrintableCharacters(final int ch) {
         // StringBuilder sbuff = new StringBuilder();
 
         if (ch >= 32) {
             if (ch < 127) {
                 // sbuff.append((char) ch);
                 return 1;
-            } else if (ch == 127) {
+            }
+            else if (ch == 127) {
                 // sbuff.append('^');
                 // sbuff.append('?');
                 return 2;
-            } else {
+            }
+            else {
                 // sbuff.append('M');
                 // sbuff.append('-');
                 int count = 2;
@@ -509,19 +545,22 @@ public class InputConsole {
                     if (ch < 128 + 127) {
                         // sbuff.append((char) (ch - 128));
                         count++;
-                    } else {
+                    }
+                    else {
                         // sbuff.append('^');
                         // sbuff.append('?');
                         count += 2;
                     }
-                } else {
+                }
+                else {
                     // sbuff.append('^');
                     // sbuff.append((char) (ch - 128 + 64));
                     count += 2;
                 }
                 return count;
             }
-        } else {
+        }
+        else {
             // sbuff.append('^');
             // sbuff.append((char) (ch + 64));
             return 2;
