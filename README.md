@@ -42,8 +42,8 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 ```
 
 Or if you don't want to use Maven, you can access the files directly here:  
-https://oss.sonatype.org/content/repositories/releases/com/dorkbox/Annotations/
-https://oss.sonatype.org/content/repositories/releases/com/dorkbox/Annotations-Dorkbox-Util/  
+https://oss.sonatype.org/content/repositories/releases/com/dorkbox/InputConsole/
+https://oss.sonatype.org/content/repositories/releases/com/dorkbox/InputConsole-Dorkbox-Util/  
 
 
 
