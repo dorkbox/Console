@@ -22,7 +22,6 @@ import dorkbox.util.input.posix.UnixTerminal;
 import dorkbox.util.input.unsupported.UnsupportedTerminal;
 import dorkbox.util.input.windows.WindowsTerminal;
 import dorkbox.util.objectPool.ObjectPool;
-import dorkbox.util.objectPool.ObjectPoolFactory;
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.AnsiConsole;
 import org.slf4j.Logger;
@@ -44,7 +43,7 @@ class InputConsole {
     private static final InputConsole consoleProxyReader = new InputConsole();
     private static final char[] emptyLine = new char[0];
 
-    // this is run by our init...
+    // this is run when init is called
     static {
         AnsiConsole.systemInstall();
 
@@ -172,7 +171,7 @@ class InputConsole {
                 e.printStackTrace();
             }
         }
-        this.pool = ObjectPoolFactory.create(new ByteBuffer2Poolable(), readers2);
+        this.pool = new ObjectPool<ByteBuffer2>(new ByteBuffer2Poolable(), readers2);
 
         String type = System.getProperty(TerminalType.TYPE, TerminalType.AUTO).toLowerCase();
         if ("dumb".equals(System.getenv("TERM"))) {

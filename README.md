@@ -26,3 +26,25 @@ Note: If you use the attached JNA/JAnsi libraries, you **MUST** load the respect
 Note: This project was inspired (and some parts heavily modified) by the excellent 
       JLine library, and includes utility classes/methods from a variety of sources.
 ```
+
+
+<h4>We now release to maven!</h4> 
+
+There is a hard dependency in the POM file for the utilities library, which is an extremely small subset of a much larger library; including only what is *necessary* for this particular project to function.
+
+This project is **kept in sync** with the utilities library, so "jar hell" is not an issue. Please note that the util library (in it's entirety) is not added since there are **many** dependencies that are not *necessary* for this project. No reason to require a massive amount of dependencies for one or two classes/methods. 
+```
+<dependency>
+  <groupId>com.dorkbox</groupId>
+  <artifactId>Annotations</artifactId>
+  <version>1.5</version>
+</dependency>
+```
+
+Or if you don't want to use Maven, you can access the files directly here:  
+https://oss.sonatype.org/content/repositories/releases/com/dorkbox/Annotations/
+https://oss.sonatype.org/content/repositories/releases/com/dorkbox/Annotations-Dorkbox-Util/  
+
+
+
+

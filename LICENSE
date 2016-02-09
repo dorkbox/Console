@@ -13,20 +13,14 @@
       Copyright 2010, dorkbox, llc
 
 
-    - Jansi - Apache 2.0 License
-      https://github.com/fusesource/jansi
+    - hawtjni - Apache 2.0 License
+      https://github.com/fusesource/hawtjni
       Copyright Hiram Chirino
 
 
-    - JLine2 - BSD 2-clause License
-      https://github.com/jline/jline2
-      Copyright 2002-2006, Marc Prud'hommeaux <mwp1@cornell.edu>
-      Copyright 2002-2012, the original author or authors
-
-
-    - JNA - Apache 2.0 License
-      https://github.com/twall/jna
-      Copyright 2011, Timothy Wall
+    - Jansi - Apache 2.0 License
+      https://github.com/fusesource/jansi
+      Copyright Hiram Chirino
 
 
     - SLF4J - MIT License
