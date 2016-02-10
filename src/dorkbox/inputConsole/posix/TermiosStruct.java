@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.util.input.posix;
+package dorkbox.inputConsole.posix;
+
+import com.sun.jna.Structure;
 
 import java.util.Arrays;
 import java.util.List;
-
-import com.sun.jna.Structure;
 
 @SuppressWarnings("ALL")
 class TermiosStruct extends Structure {

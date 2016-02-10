@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.util.input.posix;
+package dorkbox.inputConsole.posix;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -21,8 +21,8 @@ import java.nio.ByteBuffer;
 
 import com.sun.jna.Native;
 
-import dorkbox.util.input.Encoding;
-import dorkbox.util.input.Terminal;
+import dorkbox.inputConsole.Encoding;
+import dorkbox.inputConsole.Terminal;
 
 /**
  * Terminal that is used for unix platforms. Terminal initialization is handled via JNA and ioctl/tcgetattr/tcsetattr/cfmakeraw.

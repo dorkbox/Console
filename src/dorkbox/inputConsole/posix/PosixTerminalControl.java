@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.util.input.posix;
-
-import java.nio.ByteBuffer;
+package dorkbox.inputConsole.posix;
 
 import com.sun.jna.Library;
+
+import java.nio.ByteBuffer;
 
 @SuppressWarnings("ALL")
 interface PosixTerminalControl extends Library {

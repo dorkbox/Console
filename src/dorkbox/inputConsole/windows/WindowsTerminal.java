@@ -9,16 +9,15 @@
  * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-package dorkbox.util.input.windows;
+package dorkbox.inputConsole.windows;
 
 import java.io.IOException;
 import java.io.PrintStream;
 
+import dorkbox.inputConsole.Terminal;
 import org.fusesource.jansi.internal.Kernel32.INPUT_RECORD;
 import org.fusesource.jansi.internal.Kernel32.KEY_EVENT_RECORD;
 import org.fusesource.jansi.internal.WindowsSupport;
-
-import dorkbox.util.input.Terminal;
 
 /**
  * Terminal implementation for Microsoft Windows. Terminal initialization in {@link #init} is accomplished by calling the Win32 APIs <a

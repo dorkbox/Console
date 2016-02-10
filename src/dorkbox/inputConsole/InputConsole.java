@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.util.input;
+package dorkbox.inputConsole;
 
+import dorkbox.inputConsole.posix.UnixTerminal;
+import dorkbox.inputConsole.unsupported.UnsupportedTerminal;
+import dorkbox.objectPool.ObjectPool;
 import dorkbox.util.OS;
 import dorkbox.util.bytes.ByteBuffer2;
 import dorkbox.util.bytes.ByteBuffer2Poolable;
-import dorkbox.util.input.posix.UnixTerminal;
-import dorkbox.util.input.unsupported.UnsupportedTerminal;
-import dorkbox.util.input.windows.WindowsTerminal;
-import dorkbox.util.objectPool.ObjectPool;
+import dorkbox.inputConsole.windows.WindowsTerminal;
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.AnsiConsole;
 import org.slf4j.Logger;
@@ -85,6 +85,14 @@ class InputConsole {
             logger.debug("Created Terminal: {} ({}w x {}h)", consoleProxyReader.terminal.getClass().getSimpleName(),
                          consoleProxyReader.terminal.getWidth(), consoleProxyReader.terminal.getHeight());
         }
+    }
+
+    /**
+     * Gets the version number.
+     */
+    public static
+    String getVersion() {
+        return "2.0";
     }
 
     /**
@@ -568,3 +576,4 @@ class InputConsole {
         // return sbuff;
     }
 }
+

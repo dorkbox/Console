@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.util.input;
+package dorkbox.inputConsole;
 
 import java.io.IOException;
 
