@@ -37,7 +37,7 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>InputConsole</artifactId>
-  <version>2.0</version>
+  <version>2.1</version>
 </dependency>
 ```
 
@@ -49,6 +49,4 @@ https://oss.sonatype.org/content/repositories/releases/com/dorkbox/InputConsole-
 <h2>License</h2>
 
 This project is distributed under the terms of the Apache v2.0 License. See file "LICENSE" for further references.
-
-
 
