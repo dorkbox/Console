@@ -92,7 +92,7 @@ class InputConsole {
      */
     public static
     String getVersion() {
-        return "2.1";
+        return "2.2";
     }
 
     /**
@@ -179,7 +179,7 @@ class InputConsole {
                 e.printStackTrace();
             }
         }
-        this.pool = new ObjectPool<ByteBuffer2>(new ByteBuffer2Poolable(), readers2);
+        this.pool = ObjectPool.Blocking(new ByteBuffer2Poolable(), readers2);
 
         String type = System.getProperty(TerminalType.TYPE, TerminalType.AUTO).toLowerCase();
         if ("dumb".equals(System.getenv("TERM"))) {
@@ -293,7 +293,7 @@ class InputConsole {
             this.threadBufferCounter.set(bufferCounter);
 
             try {
-                buffer = this.pool.take();
+                buffer = this.pool.takeInterruptibly();
                 buffer.clear();
             } catch (InterruptedException e) {
                 logger.error("Interrupted while receiving buffer from pool.");
@@ -352,7 +352,7 @@ class InputConsole {
             if (this.readLineBuff.get() == null) {
                 ByteBuffer2 buffer;
                 try {
-                    buffer = this.pool.take();
+                    buffer = this.pool.takeInterruptibly();
                 } catch (InterruptedException e) {
                     logger.error("Interrupted while receiving buffer from pool.");
                     buffer = pool.newInstance();
@@ -387,7 +387,7 @@ class InputConsole {
         buffer.clearSecure();
 
         this.readLineBuffers.remove(buffer);
-        this.pool.release(buffer);
+        this.pool.put(buffer);
         this.readLineBuff.set(null);
 
         return readChars;
