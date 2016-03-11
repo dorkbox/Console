@@ -37,7 +37,7 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>InputConsole</artifactId>
-  <version>2.2</version>
+  <version>2.4</version>
 </dependency>
 ```
 
@@ -45,6 +45,12 @@ Or if you don't want to use Maven, you can access the files directly here:
 https://oss.sonatype.org/content/repositories/releases/com/dorkbox/InputConsole/  
 https://oss.sonatype.org/content/repositories/releases/com/dorkbox/InputConsole-Dorkbox-Util/  
 
+https://oss.sonatype.org/content/repositories/releases/com/dorkbox/ObjectPool/  
+  
+
+https://repo1.maven.org/maven2/net/java/dev/jna/jna/  
+https://repo1.maven.org/maven2/net/java/dev/jna/jna-platform/  
+https://repo1.maven.org/maven2/org/slf4j/slf4j-api/  
 
 <h2>License</h2>
 
