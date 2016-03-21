@@ -37,7 +37,7 @@ This project is **kept in sync** with the utilities library, so "jar hell" is no
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>InputConsole</artifactId>
-  <version>2.4</version>
+  <version>2.5</version>
 </dependency>
 ```
 
