@@ -17,11 +17,11 @@ package dorkbox.inputConsole;
 
 import dorkbox.inputConsole.posix.UnixTerminal;
 import dorkbox.inputConsole.unsupported.UnsupportedTerminal;
+import dorkbox.inputConsole.windows.WindowsTerminal;
 import dorkbox.objectPool.ObjectPool;
 import dorkbox.util.OS;
 import dorkbox.util.bytes.ByteBuffer2;
 import dorkbox.util.bytes.ByteBuffer2Poolable;
-import dorkbox.inputConsole.windows.WindowsTerminal;
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.AnsiConsole;
 import org.slf4j.Logger;
@@ -220,7 +220,7 @@ class InputConsole {
                 }
             }
         } catch (Exception e) {
-            logger.error("Failed to construct terminal, falling back to unsupported.");
+            logger.error("Failed to construct terminal, falling back to unsupported.", e);
             t = UnsupportedTerminal.class;
         }
 
@@ -229,7 +229,7 @@ class InputConsole {
             terminal = t.newInstance();
             terminal.init();
         } catch (Throwable e) {
-            logger.error("Terminal initialization failed for {}, falling back to unsupported.", t.getSimpleName());
+            logger.error("Terminal initialization failed for {}, falling back to unsupported.", t.getSimpleName(), e);
             t = UnsupportedTerminal.class;
 
             try {
