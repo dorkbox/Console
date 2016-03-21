@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @SuppressWarnings("ALL")
+public
 class TermiosStruct extends Structure {
     /**
      * input mode flags
