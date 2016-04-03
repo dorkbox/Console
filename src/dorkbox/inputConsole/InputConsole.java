@@ -19,6 +19,7 @@ import dorkbox.inputConsole.posix.UnixTerminal;
 import dorkbox.inputConsole.unsupported.UnsupportedTerminal;
 import dorkbox.inputConsole.windows.WindowsTerminal;
 import dorkbox.objectPool.ObjectPool;
+import dorkbox.util.FastThreadLocal;
 import dorkbox.util.OS;
 import dorkbox.util.bytes.ByteBuffer2;
 import dorkbox.util.bytes.ByteBuffer2Poolable;
@@ -92,7 +93,7 @@ class InputConsole {
      */
     public static
     String getVersion() {
-        return "2.6";
+        return "2.7";
     }
 
     /**
@@ -156,11 +157,11 @@ class InputConsole {
 
     private final ObjectPool<ByteBuffer2> pool;
 
-    private ThreadLocal<ByteBuffer2> readBuff = new ThreadLocal<ByteBuffer2>();
+    private FastThreadLocal<ByteBuffer2> readBuff = new FastThreadLocal<ByteBuffer2>();
     private List<ByteBuffer2> readBuffers = new CopyOnWriteArrayList<ByteBuffer2>();
-    private ThreadLocal<Integer> threadBufferCounter = new ThreadLocal<Integer>();
+    private FastThreadLocal<Integer> threadBufferCounter = new FastThreadLocal<Integer>();
 
-    private ThreadLocal<ByteBuffer2> readLineBuff = new ThreadLocal<ByteBuffer2>();
+    private FastThreadLocal<ByteBuffer2> readLineBuff = new FastThreadLocal<ByteBuffer2>();
     private List<ByteBuffer2> readLineBuffers = new CopyOnWriteArrayList<ByteBuffer2>();
 
     private final Terminal terminal;

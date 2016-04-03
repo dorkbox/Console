@@ -23,6 +23,12 @@
       Copyright Hiram Chirino
 
 
+    - JLine2 - BSD 2-clause License
+      https://github.com/jline/jline2
+      Copyright 2002-2006, Marc Prud'hommeaux <mwp1@cornell.edu>
+      Copyright 2002-2012, the original author or authors
+
+
     - SLF4J - MIT License
       http://www.slf4j.org
       Copyright 2004-2008, QOS.ch
