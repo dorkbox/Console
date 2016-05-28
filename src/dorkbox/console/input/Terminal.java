@@ -20,7 +20,7 @@ import java.io.IOException;
 public abstract
 class Terminal {
 
-    public static final String CONSOLE_ERROR_INIT = "Unable to get input console mode.";
+    public static final String CONSOLE_ERROR_INIT = "Unable to initialize the input console.";
     protected static final int DEFAULT_WIDTH = 80;
     protected static final int DEFAULT_HEIGHT = 24;
     protected final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
@@ -38,6 +38,7 @@ class Terminal {
     public abstract
     int getHeight();
 
+    // NOT THREAD SAFE
     public abstract
     void setEchoEnabled(final boolean enabled);
 

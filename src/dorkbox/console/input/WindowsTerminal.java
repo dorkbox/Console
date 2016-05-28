@@ -11,16 +11,21 @@
  */
 package dorkbox.console.input;
 
+import static dorkbox.console.util.windows.Kernel32.ASSERT;
+import static dorkbox.console.util.windows.Kernel32.CloseHandle;
+import static dorkbox.console.util.windows.Kernel32.GetConsoleMode;
 import static dorkbox.console.util.windows.Kernel32.GetConsoleScreenBufferInfo;
+import static dorkbox.console.util.windows.Kernel32.GetStdHandle;
 import static dorkbox.console.util.windows.Kernel32.STD_INPUT_HANDLE;
 import static dorkbox.console.util.windows.Kernel32.STD_OUTPUT_HANDLE;
+import static dorkbox.console.util.windows.Kernel32.SetConsoleMode;
 
 import java.io.IOException;
+import java.io.PrintStream;
 
 import com.sun.jna.ptr.IntByReference;
 
 import dorkbox.console.util.windows.CONSOLE_SCREEN_BUFFER_INFO;
-import dorkbox.console.util.windows.ConsoleMode;
 import dorkbox.console.util.windows.HANDLE;
 import dorkbox.console.util.windows.INPUT_RECORD;
 import dorkbox.console.util.windows.KEY_EVENT_RECORD;
@@ -32,6 +37,24 @@ import dorkbox.console.util.windows.Kernel32;
 public
 class WindowsTerminal extends Terminal {
 
+    // Console mode constants copied <tt>wincon.h</tt>.
+    // There are OTHER options, however they DO NOT work with unbuffered input or we just don't care about them.
+    /**
+     * CTRL+C is processed by the system and is not placed in the input buffer. If the input buffer is being read by ReadFile or
+     * ReadConsole, other control keys are processed by the system and are not returned in the ReadFile or ReadConsole buffer. If the
+     * ENABLE_LINE_INPUT mode is also enabled, backspace, carriage return, and linefeed characters are handled by the system.
+     */
+    private static final int PROCESSED_INPUT = 1;
+
+    /**
+     * The ReadFile or ReadConsole function returns only when a carriage return character is read. If this mode is disable, the functions
+     * return when one or more characters are available.
+     */
+    private static final int ENABLE_LINE_INPUT = 2;
+
+    // output stream for "echo" to goto
+    private static final PrintStream OUT = System.out;
+
     private final HANDLE console;
     private final HANDLE outputConsole;
 
@@ -40,37 +63,30 @@ class WindowsTerminal extends Terminal {
     private final IntByReference reference = new IntByReference();
 
     private volatile int originalMode;
+    private boolean echoEnabled = false;
 
     public
     WindowsTerminal() throws IOException {
-        console = Kernel32.GetStdHandle(STD_INPUT_HANDLE);
+        console = GetStdHandle(STD_INPUT_HANDLE);
         if (console == HANDLE.INVALID_HANDLE_VALUE) {
             throw new IOException("Unable to get input console handle.");
         }
 
-        outputConsole = Kernel32.GetStdHandle(STD_OUTPUT_HANDLE);
+        outputConsole = GetStdHandle(STD_OUTPUT_HANDLE);
         if (outputConsole == HANDLE.INVALID_HANDLE_VALUE) {
             throw new IOException("Unable to get output console handle.");
         }
 
         IntByReference mode = new IntByReference();
-        if (Kernel32.GetConsoleMode(console, mode) == 0) {
+        if (GetConsoleMode(console, mode) == 0) {
             throw new IOException(CONSOLE_ERROR_INIT);
         }
 
         this.originalMode = mode.getValue();
 
-        int newMode = this.originalMode |
-                      ConsoleMode.ENABLE_LINE_INPUT.code |
-                      ConsoleMode.ENABLE_ECHO_INPUT.code |
-                      ConsoleMode.ENABLE_PROCESSED_INPUT.code |
-                      ConsoleMode.ENABLE_WINDOW_INPUT.code;
+        int newMode = 0; // this is raw everything, not ignoring ctrl-c
 
-        // Disable input echo
-        newMode = newMode & ~ConsoleMode.ENABLE_ECHO_INPUT.code;
-
-        // Must set these four modes at the same time to make it work fine.
-        Kernel32.SetConsoleMode(console, newMode);
+        ASSERT(SetConsoleMode(console, newMode), Terminal.CONSOLE_ERROR_INIT);
     }
 
     /**
@@ -80,11 +96,10 @@ class WindowsTerminal extends Terminal {
     @Override
     public final
     void restore() throws IOException {
-        // restore the old console mode
-        Kernel32.SetConsoleMode(console, this.originalMode);
+        ASSERT(SetConsoleMode(console, this.originalMode), Terminal.CONSOLE_ERROR_INIT);
 
-        Kernel32.CloseHandle(console);
-        Kernel32.CloseHandle(outputConsole);
+        CloseHandle(console);
+        CloseHandle(outputConsole);
     }
 
     @Override
@@ -106,37 +121,26 @@ class WindowsTerminal extends Terminal {
     @Override
     public
     void setEchoEnabled(final boolean enabled) {
-        IntByReference mode = new IntByReference();
-        Kernel32.GetConsoleMode(console, mode);
-
-        int newMode;
-        if (enabled) {
-            // Enable  Ctrl+C
-            newMode = mode.getValue() | ConsoleMode.ENABLE_ECHO_INPUT.code;
-        } else {
-            // Disable Ctrl+C
-            newMode = mode.getValue() & ~ConsoleMode.ENABLE_ECHO_INPUT.code;
-        }
-
-        Kernel32.SetConsoleMode(console, newMode);
+        // only way to do this, console modes DO NOT work
+        echoEnabled = enabled;
     }
 
     @Override
     public
     void setInterruptEnabled(final boolean enabled) {
         IntByReference mode = new IntByReference();
-        Kernel32.GetConsoleMode(console, mode);
+        GetConsoleMode(console, mode);
 
         int newMode;
         if (enabled) {
             // Enable  Ctrl+C
-            newMode = mode.getValue() | ConsoleMode.ENABLE_PROCESSED_INPUT.code;
+            newMode = mode.getValue() | PROCESSED_INPUT;
         } else {
             // Disable Ctrl+C
-            newMode = mode.getValue() & ~ConsoleMode.ENABLE_PROCESSED_INPUT.code;
+            newMode = mode.getValue() & ~PROCESSED_INPUT;
         }
 
-        Kernel32.SetConsoleMode(console, newMode);
+      ASSERT(SetConsoleMode(console, newMode), Terminal.CONSOLE_ERROR_INIT);
     }
 
     @Override
@@ -144,18 +148,18 @@ class WindowsTerminal extends Terminal {
     int read() {
         int input = readInput();
 
-//        if (Console.ENABLE_ECHO) {
-//            char asChar = (char) input;
-//            if (asChar == '\n') {
-//                System.out.println();
-//            }
-//            else {
-//                System.out.print(asChar);
-//            }
-//
-//            // have to flush, otherwise we'll never see the chars on screen
-//            System.out.flush();
-//        }
+        if (echoEnabled) {
+            char asChar = (char) input;
+            if (asChar == '\n') {
+                OUT.println();
+            }
+            else {
+                OUT.print(asChar);
+            }
+
+            // have to flush, otherwise we'll never see the chars on screen
+            OUT.flush();
+        }
 
         return input;
     }
@@ -178,6 +182,8 @@ class WindowsTerminal extends Terminal {
                             if (uChar == '\r') {
                                 // we purposefully swallow input after \r, and substitute it with \n
                                 return '\n';
+                            } else if (uChar == '\n') {
+                                continue;
                             }
 
                             return uChar;
