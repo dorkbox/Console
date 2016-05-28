@@ -13,19 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.inputConsole;
+package dorkbox.console;
 
 public class TerminalType {
-    public static final String TYPE = "input.terminal";
-    public static final String READERS = "input.terminal.readers";
-    public static final String ENABLE_BACKSPACE = "input.enableBackspace";
 
-    public static final String AUTO = "auto";
-    public static final String UNIX = "unix";
-    public static final String WIN = "win";
-    public static final String WINDOWS = "windows";
 
-    public static final String NONE = "none";
-    public static final String OFF = "off";
-    public static final String FALSE = "false";
+
 }

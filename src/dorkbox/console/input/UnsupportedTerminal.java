@@ -13,43 +13,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.inputConsole.unsupported;
+package dorkbox.console.input;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-import dorkbox.inputConsole.Terminal;
 import dorkbox.util.bytes.ByteBuffer2;
 
-public class UnsupportedTerminal extends Terminal {
+public
+class UnsupportedTerminal extends Terminal {
 
     private final ByteBuffer2 buffer = new ByteBuffer2(8, -1);
-
+    private final InputStream in = System.in;
     private int readerCount = -1;
-    private final InputStream in;
 
-    public UnsupportedTerminal() {
-        this.in = System.in;
+    public
+    UnsupportedTerminal() {
     }
 
     @Override
-    public final void init() throws IOException {}
+    public final
+    void restore() {
+    }
 
     @Override
-    public final void restore() {}
-
-    @Override
-    public final int getWidth() {
+    public final
+    int getWidth() {
         return 0;
     }
 
     @Override
-    public final int getHeight() {
+    public final
+    int getHeight() {
         return 0;
     }
 
     @Override
-    public final int read() {
+    public
+    void setEchoEnabled(final boolean enabled) {
+    }
+
+    @Override
+    public
+    void setInterruptEnabled(final boolean enabled) {
+    }
+
+    @Override
+    public final
+    int read() {
         // if we are reading data (because we are in IDE mode), we want to return ALL the chars of the line!
 
         // so, 'readerCount' is REALLY the index at which we return letters (until the whole string is returned)
@@ -67,7 +78,8 @@ public class UnsupportedTerminal extends Terminal {
                         this.readerCount = this.buffer.position();
                         this.buffer.rewind();
                         break;
-                    } else {
+                    }
+                    else {
                         this.buffer.writeChar(asChar);
                     }
                 }
@@ -79,7 +91,8 @@ public class UnsupportedTerminal extends Terminal {
         if (this.readerCount == this.buffer.position()) {
             this.readerCount = -1;
             return '\n';
-        } else {
+        }
+        else {
             return this.buffer.readChar();
         }
     }

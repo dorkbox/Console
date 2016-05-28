@@ -13,40 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.inputConsole;
+package dorkbox.console.input;
 
 import java.io.IOException;
 
-public abstract class Terminal {
+public abstract
+class Terminal {
 
-    protected final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
-
-
+    public static final String CONSOLE_ERROR_INIT = "Unable to get input console mode.";
     protected static final int DEFAULT_WIDTH = 80;
     protected static final int DEFAULT_HEIGHT = 24;
+    protected final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
 
-    private volatile boolean echoEnabled;
-
-    protected Terminal() {}
-
-    public abstract void init() throws IOException;
-
-    public abstract void restore() throws IOException;
-
-    public void setEchoEnabled(boolean enabled) {
-        this.echoEnabled = enabled;
+    protected
+    Terminal() {
     }
 
-    public boolean isEchoEnabled() {
-        return this.echoEnabled;
-    }
+    public abstract
+    void restore() throws IOException;
 
-    public abstract int getWidth();
+    public abstract
+    int getWidth();
 
-    public abstract int getHeight();
+    public abstract
+    int getHeight();
+
+    public abstract
+    void setEchoEnabled(final boolean enabled);
+
+    public abstract
+    void setInterruptEnabled(final boolean enabled);
 
     /**
      * @return a character from whatever underlying input method the terminal has available.
      */
-    public abstract int read();
+    public abstract
+    int read();
 }
