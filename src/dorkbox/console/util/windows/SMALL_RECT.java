@@ -24,6 +24,7 @@ import com.sun.jna.Structure;
  * https://msdn.microsoft.com/en-us/library/ms686311%28VS.85%29.aspx
  */
 public class SMALL_RECT extends Structure {
+    static public class ByReference extends SMALL_RECT implements Structure.ByReference { }
 
     public short left;
     public short top;

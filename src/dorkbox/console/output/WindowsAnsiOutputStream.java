@@ -31,14 +31,22 @@
 package dorkbox.console.output;
 
 import static dorkbox.console.util.windows.Kernel32.ASSERT;
+import static dorkbox.console.util.windows.Kernel32.FillConsoleOutputAttribute;
+import static dorkbox.console.util.windows.Kernel32.FillConsoleOutputCharacterW;
+import static dorkbox.console.util.windows.Kernel32.GetConsoleScreenBufferInfo;
+import static dorkbox.console.util.windows.Kernel32.SetConsoleCursorPosition;
+import static dorkbox.console.util.windows.Kernel32.SetConsoleTextAttribute;
 
 import java.io.IOException;
 import java.io.OutputStream;
+
+import com.sun.jna.ptr.IntByReference;
 
 import dorkbox.console.util.windows.CONSOLE_SCREEN_BUFFER_INFO;
 import dorkbox.console.util.windows.COORD;
 import dorkbox.console.util.windows.HANDLE;
 import dorkbox.console.util.windows.Kernel32;
+import dorkbox.console.util.windows.SMALL_RECT;
 
 /**
  * A Windows ANSI escape processor, uses JNA direct-mapping to access native platform API's to change the console attributes.
@@ -77,7 +85,7 @@ final class WindowsAnsiOutputStream extends AnsiOutputStream {
     }
 
     private final HANDLE console;
-    private final CONSOLE_SCREEN_BUFFER_INFO originalInfo = new CONSOLE_SCREEN_BUFFER_INFO();
+    private CONSOLE_SCREEN_BUFFER_INFO originalInfo = new CONSOLE_SCREEN_BUFFER_INFO();
     private volatile CONSOLE_SCREEN_BUFFER_INFO info = new CONSOLE_SCREEN_BUFFER_INFO();
 
     private volatile boolean negative;
@@ -101,13 +109,13 @@ final class WindowsAnsiOutputStream extends AnsiOutputStream {
         }
 
         out.flush();
-        ASSERT(Kernel32.GetConsoleScreenBufferInfo(console, originalInfo), "Could not get the screen info");
+        ASSERT(GetConsoleScreenBufferInfo(console, originalInfo), "Could not get the screen info");
     }
 
     private
     void getConsoleInfo() throws IOException {
         out.flush();
-        ASSERT(Kernel32.GetConsoleScreenBufferInfo(console, info), "Could not get the screen info:");
+        ASSERT(GetConsoleScreenBufferInfo(console, info), "Could not get the screen info:");
     }
 
     private
@@ -124,12 +132,12 @@ final class WindowsAnsiOutputStream extends AnsiOutputStream {
             attributes = (short) (attributes & 0xFF00 | fg | bg);
         }
 
-        ASSERT(Kernel32.SetConsoleTextAttribute(console, attributes), "Could not set text attributes");
+        ASSERT(SetConsoleTextAttribute(console, attributes), "Could not set text attributes");
     }
 
     private
     void applyCursorPosition() throws IOException {
-        ASSERT(Kernel32.SetConsoleCursorPosition(console, info.cursorPosition.asValue()), "Could not set cursor position");
+        ASSERT(SetConsoleCursorPosition(console, info.cursorPosition.asValue()), "Could not set cursor position");
     }
 
     @Override
@@ -164,8 +172,8 @@ final class WindowsAnsiOutputStream extends AnsiOutputStream {
                 topLeft.y = info.window.top;
                 int screenLength = info.window.height() * info.size.x;
 
-                ASSERT(Kernel32.FillConsoleOutputAttribute(console, originalInfo.attributes, screenLength, topLeft.asValue(), written), "Could not fill console");
-                ASSERT(Kernel32.FillConsoleOutputCharacterW(console, ' ', screenLength, topLeft.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, screenLength, topLeft.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputCharacterW(console, ' ', screenLength, topLeft.asValue(), written), "Could not fill console");
                 break;
             case ERASE_TO_BEGINNING:
                 COORD topLeft2 = new COORD();
@@ -173,14 +181,14 @@ final class WindowsAnsiOutputStream extends AnsiOutputStream {
                 topLeft2.y = info.window.top;
                 int lengthToCursor = (info.cursorPosition.y - info.window.top) * info.size.x + info.cursorPosition.x;
 
-                ASSERT(Kernel32.FillConsoleOutputAttribute(console, originalInfo.attributes, lengthToCursor, topLeft2.asValue(), written), "Could not fill console");
-                ASSERT(Kernel32.FillConsoleOutputCharacterW(console, ' ', lengthToCursor, topLeft2.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, lengthToCursor, topLeft2.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputCharacterW(console, ' ', lengthToCursor, topLeft2.asValue(), written), "Could not fill console");
                 break;
             case ERASE_TO_END:
                 int lengthToEnd = (info.window.bottom - info.cursorPosition.y) * info.size.x + info.size.x - info.cursorPosition.x;
 
-                ASSERT(Kernel32.FillConsoleOutputAttribute(console, originalInfo.attributes, lengthToEnd, info.cursorPosition.asValue(), written), "Could not fill console");
-                ASSERT(Kernel32.FillConsoleOutputCharacterW(console, ' ', lengthToEnd, info.cursorPosition.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, lengthToEnd, info.cursorPosition.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputCharacterW(console, ' ', lengthToEnd, info.cursorPosition.asValue(), written), "Could not fill console");
         }
     }
 
@@ -194,21 +202,21 @@ final class WindowsAnsiOutputStream extends AnsiOutputStream {
                 COORD currentRow = info.cursorPosition.asValue();
                 currentRow.x = (short) 0;
 
-                ASSERT(Kernel32.FillConsoleOutputAttribute(console, originalInfo.attributes, info.size.x, currentRow.asValue(), written), "Could not fill console");
-                ASSERT(Kernel32.FillConsoleOutputCharacterW(console, ' ', info.size.x, currentRow.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, info.size.x, currentRow.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputCharacterW(console, ' ', info.size.x, currentRow.asValue(), written), "Could not fill console");
                 break;
             case ERASE_TO_BEGINNING:
                 COORD leftColCurrRow2 = info.cursorPosition.asValue();
                 leftColCurrRow2.x = (short) 0;
 
-                ASSERT(Kernel32.FillConsoleOutputAttribute(console, originalInfo.attributes, info.cursorPosition.x, leftColCurrRow2.asValue(), written), "Could not fill console");
-                ASSERT(Kernel32.FillConsoleOutputCharacterW(console, ' ', info.cursorPosition.x, leftColCurrRow2.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, info.cursorPosition.x, leftColCurrRow2.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputCharacterW(console, ' ', info.cursorPosition.x, leftColCurrRow2.asValue(), written), "Could not fill console");
                 break;
             case ERASE_TO_END:
                 int lengthToLastCol = info.size.x - info.cursorPosition.x;
 
-                ASSERT(Kernel32.FillConsoleOutputAttribute(console, originalInfo.attributes, lengthToLastCol, info.cursorPosition.asValue(), written), "Could not fill console");
-                ASSERT(Kernel32.FillConsoleOutputCharacterW(console, ' ', lengthToLastCol, info.cursorPosition.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, lengthToLastCol, info.cursorPosition.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputCharacterW(console, ' ', lengthToLastCol, info.cursorPosition.asValue(), written), "Could not fill console");
         }
     }
 
@@ -299,20 +307,30 @@ final class WindowsAnsiOutputStream extends AnsiOutputStream {
 
     @Override
     protected
-    void processScrollDown(final int optionInt) throws IOException {
+    void processScrollDown(final int count) throws IOException {
+        scroll((short) -count);
     }
 
     @Override
     protected
-    void processScrollUp(final int optionInt) throws IOException {
+    void processScrollUp(final int count) throws IOException {
+        scroll((short) count);
     }
 
     protected
     void processCursorUpLine(final int count) throws IOException {
+        getConsoleInfo();
+        info.cursorPosition.y = (short) Math.max(info.window.top, info.cursorPosition.y - count);
+        info.cursorPosition.x = 0;
+        applyCursorPosition();
     }
 
     protected
     void processCursorDownLine(final int count) throws IOException {
+        getConsoleInfo();
+        info.cursorPosition.y = (short) Math.max(info.window.top, info.cursorPosition.y + count);
+        info.cursorPosition.x = 0;
+        applyCursorPosition();
     }
 
     @Override
@@ -362,6 +380,45 @@ final class WindowsAnsiOutputStream extends AnsiOutputStream {
         getConsoleInfo();
         info.cursorPosition.y = (short) Math.max(info.window.top, info.cursorPosition.y - count);
         applyCursorPosition();
+    }
+
+    /**
+     * @param rowsToScroll negative to go down, positive to go up.
+     *
+     *                     Scroll up and new lines are added at the bottom, scroll down and new lines are added at the
+     *                     top (per the definition).
+     *
+     *                     Windows doesn't EXACTLY do this, since it will use whatever content is still on the buffer
+     *                     and show THAT instead of blank lines. If the content is moved enough so that it runs OFF the
+     *                     buffer, blank lines will be shown.
+     */
+    private void scroll(short rowsToScroll) throws IOException {
+        if (rowsToScroll == 0) {
+            return;
+        }
+
+        // Get the current screen buffer window position.
+        getConsoleInfo();
+
+        SMALL_RECT.ByReference scrollRect = new SMALL_RECT.ByReference();
+        COORD.ByValue coordDest = new COORD.ByValue();
+
+        // the content that will be scrolled
+        scrollRect.top = (short) (0);
+        scrollRect.bottom = (short) (Short.MAX_VALUE);
+        scrollRect.left = 0;
+        scrollRect.right = (short) (info.size.x - 1);
+
+        // The destination for the scroll rectangle is xxx row up/down.
+        coordDest.x = 0;
+        coordDest.y = (short) (-rowsToScroll);
+
+        // fill the space with whatever color was already there with spaces
+        IntByReference attribs = new IntByReference();
+        attribs.setValue(info.attributes);
+
+        // The clipping rectangle is the same as the scrolling rectangle, so we pass NULL
+        ASSERT(Kernel32.ScrollConsoleScreenBufferW(console, scrollRect, null, coordDest, attribs), "Could not scroll console");
     }
 
     @Override

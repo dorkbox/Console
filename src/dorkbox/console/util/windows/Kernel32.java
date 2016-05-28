@@ -85,7 +85,7 @@ public class Kernel32 {
      * https://msdn.microsoft.com/en-us/library/windows/desktop/ms679351(v=vs.85).aspx
      */
     public static native
-    int FormatMessageA(int flags, Pointer source, int messageId, int languageId, byte[] buffer, int size, long[] args);
+    int FormatMessageW(int flags, Pointer source, int messageId, int languageId, byte[] buffer, int size, long[] args);
 
 
     /**
@@ -95,10 +95,18 @@ public class Kernel32 {
     int GetConsoleScreenBufferInfo(HANDLE consoleOutput, CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo);
 
     /**
-     * https://msdn.microsoft.com/en-us/library/ms686025%28VS.85%29.aspx
+     * https://msdn.microsoft.com/en-us/library/windows/desktop/ms686025(v=vs.85).aspx
      */
     public static native
     int SetConsoleCursorPosition(HANDLE consoleOutput, COORD.ByValue cursorPosition);
+
+    /**
+     * https://msdn.microsoft.com/en-us/library/windows/desktop/ms685107(v=vs.85).aspx
+     */
+    public static native
+    int ScrollConsoleScreenBufferW(HANDLE consoleOutput, SMALL_RECT.ByReference scrollRect, SMALL_RECT.ByReference clipRect, COORD.ByValue destinationOrigin, IntByReference fillAttributes);
+
+
 
 
     /**
@@ -148,7 +156,7 @@ public class Kernel32 {
         int errorCode = Native.getLastError();
         int bufferSize = 160;
         byte data[] = new byte[bufferSize];
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, Pointer.NULL, errorCode, 0, data, bufferSize, null);
+        FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, Pointer.NULL, errorCode, 0, data, bufferSize, null);
         return new String(data);
     }
 
