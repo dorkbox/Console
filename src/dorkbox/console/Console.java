@@ -15,8 +15,11 @@
  */
 package dorkbox.console;
 
+import static dorkbox.console.Input.readLinePassword;
+
 import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
@@ -136,7 +139,15 @@ class Console {
      */
     public static
     char[] readPassword() {
-        return Input.readLinePassword();
+        return readLinePassword();
+    }
+
+    /**
+     * Reads an InputStream capable of reading a single character at a time
+     */
+    public static
+    InputStream getInputStream() {
+        return Input.getInputStream();
     }
 
     /**
