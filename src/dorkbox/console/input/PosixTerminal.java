@@ -20,7 +20,6 @@ import java.nio.ByteBuffer;
 
 import com.sun.jna.ptr.IntByReference;
 
-import dorkbox.console.Console;
 import dorkbox.console.util.posix.CLibraryPosix;
 import dorkbox.console.util.posix.Termios;
 
@@ -35,7 +34,6 @@ class PosixTerminal extends Terminal {
     private final Termios original = new Termios();
     private Termios termInfo = new Termios();
     private ByteBuffer windowSizeBuffer = ByteBuffer.allocate(8);
-    private volatile boolean echo_enabled = !Console.ENABLE_ECHO;
     private final IntByReference inputRef = new IntByReference();
 
     public
@@ -45,19 +43,11 @@ class PosixTerminal extends Terminal {
             throw new IOException(CONSOLE_ERROR_INIT);
         }
 
-        // COMPARABLE TO (from upstream)
-        //settings.set("-icanon min 1 -ixon");
-        //settings.set("dsusp undef");
-
         // CTRL-I (tab), CTRL-M (enter)  do not work
 
         if (CLibraryPosix.tcgetattr(0, this.termInfo) != 0) {
             throw new IOException(CONSOLE_ERROR_INIT);
         }
-
-//        this.termInfo.inputFlags |= Termios.Input.INLCR; // Map NL to CR on input
-//        this.termInfo.inputFlags |= Termios.Input.ICRNL;   // map CR to NL (ala CRMOD)
-
 
         this.termInfo.inputFlags &= ~Termios.Input.IXON;   // DISABLE - output flow control mediated by ^S and ^Q
         this.termInfo.inputFlags &= ~Termios.Input.IXOFF;  // DISABLE - input flow control mediated by ^S and ^Q
@@ -75,14 +65,6 @@ class PosixTerminal extends Terminal {
 
         this.termInfo.controlFlags |= Termios.Control.CS8;   // set character size mask 8 bits
         this.termInfo.controlFlags |= Termios.Control.CREAD; // enable receiver
-
-        // If MIN > 0 and TIME = 0, MIN sets the number of characters to receive before the read is satisfied.
-        // As TIME is zero, the timer is not used.
-        this.termInfo.controlChars[Termios.ControlChars.VMIN] = (byte) 2; // Minimum number of characters for non-canonical read (MIN).
-        this.termInfo.controlChars[Termios.ControlChars.VTIME] = (byte) 5; // Timeout in deci-seconds for non-canonical read (TIME).
-        this.termInfo.controlChars[Termios.ControlChars.VSUSP] = (byte) 0; // suspend disabled
-        this.termInfo.controlChars[Termios.ControlChars.VEOF] = (byte) 0;  // eof disabled
-        this.termInfo.controlChars[Termios.ControlChars.VEOL] = (byte) 0;  // eol disabled
 
         if (CLibraryPosix.tcsetattr(0, Termios.TCSANOW, this.termInfo) != 0) {
             throw new IOException("Can not set terminal flags");
@@ -132,14 +114,6 @@ class PosixTerminal extends Terminal {
     @Override
     public final
     int read() {
-        // TODO: should have a better way of doing this! (should use a method to set echo, instead of a field?)
-        // have to determine when it changes
-        if (echo_enabled != Console.ENABLE_ECHO) {
-            echo_enabled = Console.ENABLE_ECHO;
-            setEchoEnabled(echo_enabled);
-            setInterruptEnabled(false);
-        }
-
         CLibraryPosix.read(0, inputRef, 1);
         return inputRef.getValue();
     }
