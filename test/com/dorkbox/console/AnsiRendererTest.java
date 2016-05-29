@@ -17,7 +17,7 @@
 package com.dorkbox.console;
 
 import static dorkbox.console.output.AnsiRenderer.render;
-import static java.awt.Font.BOLD;
+import static dorkbox.console.output.Attribute.BOLD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
+import dorkbox.console.Console;
 import dorkbox.console.output.Ansi;
 import dorkbox.console.output.AnsiRenderer;
 import dorkbox.console.output.Color;
@@ -43,7 +44,7 @@ public class AnsiRendererTest
 
     @Before
     public void setUp() {
-        Ansi.setEnabled(true);
+        Console.ENABLE_ANSI = true;
     }
 
     @Test
@@ -66,7 +67,6 @@ public class AnsiRendererTest
         String str = render("@|bold,red foo|@");
         System.out.println(str);
         assertEquals(Ansi.ansi().a(BOLD).fg(Color.RED).a("foo").reset().toString(), str);
-        assertEquals(Ansi.ansi().bold().fgRed().a("foo").reset().toString(), str);
     }
 
     @Test
@@ -74,7 +74,6 @@ public class AnsiRendererTest
         String str = render("@|bold,red foo bar baz|@");
         System.out.println(str);
         assertEquals(Ansi.ansi().a(BOLD).fg(Color.RED).a("foo bar baz").reset().toString(), str);
-        assertEquals(Ansi.ansi().bold().fgRed().a("foo bar baz").reset().toString(), str);
     }
 
     @Test
@@ -82,10 +81,10 @@ public class AnsiRendererTest
         String str = render("@|bold,red foo bar baz|@ ick @|bold,red foo bar baz|@");
         System.out.println(str);
         assertEquals(Ansi.ansi()
-                         .a(BOLD).fg(Color.RED).a("foo bar baz").reset()
-                         .a(" ick ")
-                         .a(BOLD).fg(Color.RED).a("foo bar baz").reset()
-                         .toString(), str);
+                             .a(BOLD).fg(Color.RED).a("foo bar baz").reset()
+                             .a(" ick ")
+                             .a(BOLD).fg(Color.RED).a("foo bar baz").reset()
+                             .toString(), str);
     }
     
     @Test

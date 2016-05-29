@@ -64,13 +64,10 @@ class AnsiRenderWriter extends PrintWriter {
         }
     }
 
-    //
-    // Need to prevent partial output from being written while formatting or we will get rendering exceptions
-    //
-
     @Override
     public
     PrintWriter format(final String format, final Object... args) {
+        flush(); // prevents partial output from being written while formatting or we will get rendering exceptions
         print(String.format(format, args));
         return this;
     }
@@ -78,6 +75,7 @@ class AnsiRenderWriter extends PrintWriter {
     @Override
     public
     PrintWriter format(final Locale l, final String format, final Object... args) {
+        flush(); // prevents partial output from being written while formatting or we will get rendering exceptions
         print(String.format(l, format, args));
         return this;
     }

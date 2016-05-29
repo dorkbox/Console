@@ -25,8 +25,6 @@ import com.sun.jna.Structure;
  */
 public
 class COORD extends Structure {
-    static public class ByValue extends COORD implements Structure.ByValue { }
-
     public short x;
     public short y;
 
@@ -45,7 +43,12 @@ class COORD extends Structure {
     }
 
     @Override
-    public String toString() {
+    public
+    String toString() {
         return x + ":" + y;
     }
+
+
+    static public
+    class ByValue extends COORD implements Structure.ByValue {}
 }

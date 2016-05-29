@@ -1,10 +1,9 @@
 /*
- * Copyright (C) 2009, Progress Software Corporation and/or its
- * subsidiaries or affiliates.  All rights reserved.
+ * Copyright 2016 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a asValue of the License at
+ * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -14,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright 2016 dorkbox, llc
+ *
+ * Copyright (C) 2009, Progress Software Corporation and/or its
+ * subsidiaries or affiliates.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * You may obtain a asValue of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -58,7 +59,7 @@ import dorkbox.console.util.windows.SMALL_RECT;
  * @author Joris Kuipers
  */
 @SuppressWarnings("NumericCastThatLosesPrecision")
-final class WindowsAnsiOutputStream extends AnsiOutputStream {
+public final class WindowsAnsiOutputStream extends AnsiOutputStream {
     private static final short ANSI_FOREGROUND_COLOR_MAP[];
     private static final short ANSI_BACKGROUND_COLOR_MAP[];
 
@@ -92,12 +93,13 @@ final class WindowsAnsiOutputStream extends AnsiOutputStream {
     private volatile short savedX = (short) -1;
     private volatile short savedY = (short) -1;
 
+    public
     WindowsAnsiOutputStream(final OutputStream os, int fileHandle) throws IOException {
         super(os);
 
-        if (fileHandle == AnsiConsole.STDOUT_FILENO) {
+        if (fileHandle == 1) { // STDOUT_FILENO
             fileHandle = Kernel32.STD_OUTPUT_HANDLE;
-        } else if (fileHandle == AnsiConsole.STDERR_FILENO) {
+        } else if (fileHandle == 2) { // STDERR_FILENO
             fileHandle = Kernel32.STD_ERROR_HANDLE;
         } else {
             throw new IllegalArgumentException("Invalid file handle " + fileHandle);
@@ -321,7 +323,7 @@ final class WindowsAnsiOutputStream extends AnsiOutputStream {
     void processCursorUpLine(final int count) throws IOException {
         getConsoleInfo();
         info.cursorPosition.y = (short) Math.max(info.window.top, info.cursorPosition.y - count);
-        info.cursorPosition.x = 0;
+        info.cursorPosition.x = (short) 0;
         applyCursorPosition();
     }
 
@@ -329,7 +331,7 @@ final class WindowsAnsiOutputStream extends AnsiOutputStream {
     void processCursorDownLine(final int count) throws IOException {
         getConsoleInfo();
         info.cursorPosition.y = (short) Math.max(info.window.top, info.cursorPosition.y + count);
-        info.cursorPosition.x = 0;
+        info.cursorPosition.x = (short) 0;
         applyCursorPosition();
     }
 
@@ -383,6 +385,8 @@ final class WindowsAnsiOutputStream extends AnsiOutputStream {
     }
 
     /**
+     * Scrolls the contents of the buffer either UP or DOWN
+     *
      * @param rowsToScroll negative to go down, positive to go up.
      *
      *                     Scroll up and new lines are added at the bottom, scroll down and new lines are added at the
@@ -405,12 +409,12 @@ final class WindowsAnsiOutputStream extends AnsiOutputStream {
 
         // the content that will be scrolled
         scrollRect.top = (short) (0);
-        scrollRect.bottom = (short) (Short.MAX_VALUE);
-        scrollRect.left = 0;
+        scrollRect.bottom = Short.MAX_VALUE;
+        scrollRect.left = (short) 0;
         scrollRect.right = (short) (info.size.x - 1);
 
         // The destination for the scroll rectangle is xxx row up/down.
-        coordDest.x = 0;
+        coordDest.x = (short) 0;
         coordDest.y = (short) (-rowsToScroll);
 
         // fill the space with whatever color was already there with spaces

@@ -1,4 +1,19 @@
-/**
+/*
+ * Copyright 2016 dorkbox, llc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ *
  * Copyright (C) 2009, Progress Software Corporation and/or its
  * subsidiaries or affiliates.  All rights reserved.
  * <p>
@@ -14,7 +29,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package dorkbox.console.output;
 
 import java.io.FilterOutputStream;
@@ -24,21 +38,19 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 
 /**
- * A ANSI output stream extracts ANSI escape codes written to 
- * an output stream. 
+ * A ANSI output stream extracts ANSI escape codes written to an output stream.
  *
  * For more information about ANSI escape codes, see:
  * http://en.wikipedia.org/wiki/ANSI_escape_code
  *
- * This class just filters out the escape codes so that they are not
- * sent out to the underlying OutputStream.  Subclasses should
+ * This class just filters out the escape codes so that they are not sent out to the underlying OutputStream.  Subclasses should
  * actually perform the ANSI escape behaviors.
  *
+ * @author dorkbox, llc
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  * @author Joris Kuipers
- * @since 1.0
  */
-@SuppressWarnings("NumericCastThatLosesPrecision")
+@SuppressWarnings({"NumericCastThatLosesPrecision", "WeakerAccess"})
 public
 class AnsiOutputStream extends FilterOutputStream {
     private static final Charset CHARSET = Charset.forName("UTF-8");
@@ -52,23 +64,29 @@ class AnsiOutputStream extends FilterOutputStream {
     static final int CYAN    = 6;
     static final int WHITE   = 7;
 
-    static final char CURSOR_UP        = 'A';
+    static final char CURSOR_UP        = 'A'; // Moves the cursor n (default 1) cells in the given direction. If the cursor is already at the edge of the screen, this has no effect.
     static final char CURSOR_DOWN      = 'B';
-    static final char CURSOR_RIGHT     = 'C';
-    static final char CURSOR_LEFT      = 'D';
-    static final char CURSOR_DOWN_LINE = 'E';
-    static final char CURSOR_UP_LINE   = 'F';
-    static final char CURSOR_TO_COL    = 'G';
-    static final char CURSOR_POS       = 'H';
-    static final char CURSOR_POS_ALT   = 'f';
+    static final char CURSOR_FORWARD   = 'C';
+    static final char CURSOR_BACK      = 'D';
 
-    static final char CURSOR_ERASE_SCREEN = 'J';
-    static final char CURSOR_ERASE_LINE   = 'K';
-    static final char PAGE_SCROLL_UP      = 'S';
-    static final char PAGE_SCROLL_DOWN    = 'T';
-    static final char SAVE_CURSOR_POS     = 's';
-    static final char RESTORE_CURSOR_POS  = 'u';
-    static final char TEXT_ATTRIBUTE      = 'm';
+    static final char CURSOR_DOWN_LINE = 'E'; // Moves cursor to beginning of the line n (default 1) lines down.
+    static final char CURSOR_UP_LINE   = 'F'; // Moves cursor to beginning of the line n (default 1) lines up.
+
+    static final char CURSOR_TO_COL    = 'G'; // Moves the cursor to column n (default 1).
+
+    static final char CURSOR_POS       = 'H'; // Moves the cursor to row n, column m. The values are 1-based, and default to 1 (top left corner) if omitted.
+    static final char CURSOR_POS_ALT   = 'f'; // Moves the cursor to row n, column m. Both default to 1 if omitted. Same as CUP
+
+    static final char CURSOR_ERASE_SCREEN = 'J'; // Clears part of the screen. If n is 0 (or missing), clear from cursor to end of screen. If n is 1, clear from cursor to beginning of the screen. If n is 2, clear entire screen (and moves cursor to upper left on DOS ANSI.SYS).
+    static final char CURSOR_ERASE_LINE   = 'K'; // Erases part of the line. If n is zero (or missing), clear from cursor to the end of the line. If n is one, clear from cursor to beginning of the line. If n is two, clear entire line. Cursor position does not change.
+
+
+    static final char SCROLL_UP           = 'S'; // Scroll whole page up by n (default 1) lines. New lines are added at the bottom. (not ANSI.SYS)
+    static final char SCROLL_DOWN         = 'T'; // Scroll whole page down by n (default 1) lines. New lines are added at the top. (not ANSI.SYS)
+
+    static final char SAVE_CURSOR_POS     = 's'; // Saves the cursor position.
+    static final char RESTORE_CURSOR_POS  = 'u'; // Restores the cursor position.
+    static final char TEXT_ATTRIBUTE      = 'm'; // Sets SGR parameters, including text color. After CSI can be zero or more parameters separated with ;. With no parameters, CSI m is treated as CSI 0 m (reset / normal), which is typical of most of the ANSI escape sequences.
 
     static final int ATTRIBUTE_RESET             = 0; // Reset / Normal - all attributes off
     static final int ATTRIBUTE_BOLD              = 1; // Intensity: Bold
@@ -90,27 +108,19 @@ class AnsiOutputStream extends FilterOutputStream {
     static final int ATTRIBUTE_CONCEAL_OFF       = 28; // Reveal conceal off
     static final int ATTRIBUTE_STRIKETHROUGH_OFF = 29; // Not crossed out
 
+
     static final int ATTRIBUTE_DEFAULT_FG = 39; //  Default text color (foreground)
     static final int ATTRIBUTE_DEFAULT_BG = 49; //  Default background color
+
 
     // for Erase Screen/Line
     static final int ERASE_TO_END = 0;
     static final int ERASE_TO_BEGINNING = 1;
     static final int ERASE_ALL = 2;
 
-    static final byte[] RESET_CODE = new Ansi().reset()
-                                               .toString()
-                                               .getBytes(CHARSET);
 
-    AnsiOutputStream(OutputStream os) {
-        super(os);
-    }
 
     private final static int MAX_ESCAPE_SEQUENCE_LENGTH = 100;
-    private byte buffer[] = new byte[MAX_ESCAPE_SEQUENCE_LENGTH];
-    private int pos = 0;
-    private int startOfValue;
-    private final ArrayList<Object> options = new ArrayList<Object>();
 
     private static final int LOOKING_FOR_FIRST_ESC_CHAR = 0;
     private static final int LOOKING_FOR_SECOND_ESC_CHAR = 1;
@@ -131,8 +141,26 @@ class AnsiOutputStream extends FilterOutputStream {
     private static final int BEL = 7;
     private static final int SECOND_ST_CHAR = '\\';
 
-    // TODO: implement to get perf boost: public void write(byte[] b, int off, int len)
 
+    public static final byte[] RESET_CODE = new StringBuilder(3).append((char)FIRST_ESC_CHAR)
+                                                                .append((char)SECOND_ESC_CHAR)
+                                                                .append(AnsiOutputStream.TEXT_ATTRIBUTE)
+                                                                .toString()
+                                                                .getBytes(CHARSET);
+
+    public
+    AnsiOutputStream(OutputStream os) {
+        super(os);
+    }
+
+
+    private byte buffer[] = new byte[MAX_ESCAPE_SEQUENCE_LENGTH];
+    private int pos = 0;
+    private int startOfValue;
+    private final ArrayList<Object> options = new ArrayList<Object>();
+
+
+    @Override
     public
     void write(int data) throws IOException {
         switch (state) {
@@ -301,9 +329,6 @@ class AnsiOutputStream extends FilterOutputStream {
         state = LOOKING_FOR_FIRST_ESC_CHAR;
     }
 
-
-
-
     /**
      * @return true if the escape command was processed.
      */
@@ -317,10 +342,10 @@ class AnsiOutputStream extends FilterOutputStream {
                 case CURSOR_DOWN:
                     processCursorDown(optionInt(options, 0, 1));
                     return true;
-                case CURSOR_RIGHT:
+                case CURSOR_FORWARD:
                     processCursorRight(optionInt(options, 0, 1));
                     return true;
-                case CURSOR_LEFT:
+                case CURSOR_BACK:
                     processCursorLeft(optionInt(options, 0, 1));
                     return true;
                 case CURSOR_DOWN_LINE:
@@ -342,10 +367,10 @@ class AnsiOutputStream extends FilterOutputStream {
                 case CURSOR_ERASE_LINE:
                     processEraseLine(optionInt(options, 0, 0));
                     return true;
-                case PAGE_SCROLL_UP:
+                case SCROLL_UP:
                     processScrollUp(optionInt(options, 0, 1));
                     return true;
-                case PAGE_SCROLL_DOWN:
+                case SCROLL_DOWN:
                     processScrollDown(optionInt(options, 0, 1));
                     return true;
                 case TEXT_ATTRIBUTE:
@@ -554,7 +579,6 @@ class AnsiOutputStream extends FilterOutputStream {
     @Override
     public
     void close() throws IOException {
-        write(RESET_CODE);
         flush();
         super.close();
     }

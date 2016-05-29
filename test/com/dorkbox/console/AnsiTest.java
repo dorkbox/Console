@@ -16,6 +16,10 @@
 
 package com.dorkbox.console;
 
+import static dorkbox.console.output.Ansi.ansi;
+import static dorkbox.console.output.AnsiRenderer.render;
+import static dorkbox.console.output.Attribute.BOLD;
+import static dorkbox.console.output.Color.RED;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
@@ -31,31 +35,53 @@ import dorkbox.console.output.Color;
 public class AnsiTest
 {
     @Test
-    public void testSetEnabled() throws Exception {
-        Ansi.setEnabled(false);
-        new Thread()
-        {
-            @Override
-            public void run() {
-                assertEquals(false, Ansi.isEnabled());
-            }
-        }.run();
+    public void testClone() throws CloneNotSupportedException {
+        Ansi ansi = ansi().a("Some text").bg(Color.BLACK).fg(Color.WHITE);
+        Ansi clone = ansi(ansi);
 
-        Ansi.setEnabled(true);
-        new Thread()
-        {
-            @Override
-            public void run() {
-                assertEquals(true, Ansi.isEnabled());
-            }
-        }.run();
+        assertEquals(ansi.a("test").reset().toString(), clone.a("test").reset().toString());
     }
 
     @Test
-    public void testClone() throws CloneNotSupportedException {
-        Ansi ansi = Ansi.ansi().a("Some text").bg(Color.BLACK).fg(Color.WHITE);
-        Ansi clone = new Ansi(ansi);
+    public void testOutput() throws CloneNotSupportedException {
 
-        assertEquals(ansi.a("test").reset().toString(), clone.a("test").reset().toString());
+        // verify the output renderer
+        String str = render("@|bold foo|@foo");
+        assertEquals(ansi().a(BOLD).a("foo").reset().a("foo").toString(), str);
+        assertEquals(ansi().bold().a("foo").reset().a("foo").toString(), str);
+
+
+        str = render("@|bold,red foo|@");
+        assertEquals(ansi().a(BOLD).fg(RED).a("foo").reset().toString(), str);
+        assertEquals(ansi().bold().fg(RED).a("foo").reset().toString(), str);
+
+        str = render("@|bold,red foo bar baz|@");
+        assertEquals(ansi().a(BOLD).fg(RED).a("foo bar baz").reset().toString(), str);
+        assertEquals(ansi().bold().fg(RED).a("foo bar baz").reset().toString(), str);
+
+
+        str = render("@|bold,red foo bar baz|@ ick @|bold,red foo bar baz|@");
+        String expected = ansi().a(BOLD)
+                                .fg(RED)
+                                .a("foo bar baz")
+                                .reset()
+                                .a(" ick ")
+                                .a(BOLD)
+                                .fg(RED)
+                                .a("foo bar baz")
+                                .reset()
+                                .toString();
+
+        assertEquals(expected, str);
+
+
+        str = render("@|bold foo"); // shouldn't work
+        System.err.println(str + " <- shouldn't work");
+
+        str = render("@|bold|@");  // shouldn't work
+        System.err.println(str + " <- shouldn't work");
+
+        str = render("@|bold foo|@foo");
+        System.out.println(str  + " <- shouldn't work");
     }
 }

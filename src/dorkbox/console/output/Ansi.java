@@ -1,20 +1,4 @@
-/**
- * Copyright (C) 2009, Progress Software Corporation and/or its
- * subsidiaries or affiliates.  All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a asValue of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- *
+/*
  * Copyright 2016 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,313 +12,93 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ *
+ * Copyright (C) 2009 the original author(s).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package dorkbox.console.output;
 
+import static dorkbox.console.output.AnsiOutputStream.ATTRIBUTE_RESET;
+
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
+
+import dorkbox.console.Console;
 
 /**
- * Provides a fluent API for generating ANSI escape sequences.
- *
+ * Provides a fluent API for generating ANSI escape sequences and providing access to streams that support it.
+ * <p>
  * See: https://en.wikipedia.org/wiki/ANSI_escape_code
  *
- * @author Dorkbox, LLC
+ * @author dorkbox, llc
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-@SuppressWarnings({"WeakerAccess", "unused"})
-public class Ansi {
+@SuppressWarnings("unused")
+public
+class Ansi {
+    static {
+        // make SURE that our console in/out/err are correctly setup BEFORE accessing methods in this class
+        Console.getVersion();
+    }
 
     private static final String NEW_LINE = System.getProperty("line.separator");
 
-    private static final char FIRST_ESC_CHAR = 27;
-    private static final char SECOND_ESC_CHAR = '[';
-
-    private static int installed;
+    private final StringBuilder builder;
+    private final ArrayList<Integer> attributeOptions = new ArrayList<Integer>(8);
 
     /**
-     * Override System.err and System.out with an ANSI capable {@link java.io.PrintStream}.
+     * Creates a new Ansi object
      */
-    public static synchronized
-    void systemInstall() {
-        installed++;
-        if (installed == 1) {
-            System.setOut(AnsiConsole.out);
-            System.setErr(AnsiConsole.err);
-        }
+    public static
+    Ansi ansi() {
+        return new Ansi();
     }
 
     /**
-     * un-does a previous {@link #systemInstall()}.
-     *
-     * If {@link #systemInstall()} was called multiple times, then {@link #systemUninstall()} must be called the same number of
-     * times before it is uninstalled.
-     */
-    public static synchronized
-    void systemUninstall() {
-        installed--;
-        if (installed == 0) {
-            if (AnsiConsole.out != AnsiConsole.system_out) {
-                AnsiConsole.out.close();
-            }
-
-            if (AnsiConsole.err != AnsiConsole.system_err) {
-                AnsiConsole.err.close();
-            }
-
-            System.setOut(AnsiConsole.system_out);
-            System.setErr(AnsiConsole.system_err);
-        }
-    }
-
-    public static final String DISABLE = Ansi.class.getName() + ".disable";
-
-    private static Callable<Boolean> detector = new Callable<Boolean>() {
-        @Override
-        public Boolean call() throws Exception {
-            return !Boolean.getBoolean(DISABLE);
-        }
-    };
-
-    public static void setDetector(final Callable<Boolean> detector) {
-        if (detector == null) {
-            throw new IllegalArgumentException();
-        }
-        Ansi.detector = detector;
-    }
-
-    public static boolean isDetected() {
-        try {
-            return detector.call();
-        }
-        catch (Exception e) {
-            return true;
-        }
-    }
-
-    private static final InheritableThreadLocal<Boolean> holder = new InheritableThreadLocal<Boolean>()
-    {
-        @Override
-        protected Boolean initialValue() {
-            return isDetected();
-        }
-    };
-
-    public static void setEnabled(final boolean flag) {
-        holder.set(flag);
-    }
-
-    public static boolean isEnabled() {
-        return holder.get();
-    }
-
-    private static class NoAnsi extends Ansi
-    {
-        public
-        NoAnsi() {
-            super();
-        }
-
-        public
-        NoAnsi(final StringBuilder builder) {
-            super(builder);
-        }
-
-        public
-        NoAnsi(final int size) {
-            super(size);
-        }
-
-        @Override
-        public Ansi fg(Color color) {
-            return this;
-        }
-
-        @Override
-        public Ansi bg(Color color) {
-            return this;
-        }
-
-        @Override
-        public Ansi fgBright(Color color) {
-            return this;
-        }
-
-        @Override
-        public Ansi bgBright(Color color) {
-            return this;
-        }
-
-        @Override
-        public Ansi fgBrightDefault() { return this; }
-
-        @Override
-        public Ansi bgBrightDefault() { return this; }
-
-        @Override
-        public Ansi fgDefault() { return this; }
-
-        @Override
-        public Ansi bgDefault() { return this; }
-
-
-        @Override
-        public Ansi a(Attribute attribute) {
-            return this;
-        }
-
-        @Override
-        public Ansi cursor(int x, int y) {
-            return this;
-        }
-
-        @Override
-        public Ansi cursorToColumn(int x) {
-            return this;
-        }
-
-        @Override
-        public Ansi cursorUp(int y) {
-            return this;
-        }
-
-        @Override
-        public Ansi cursorRight(int x) {
-            return this;
-        }
-
-        @Override
-        public Ansi cursorDown(int y) {
-            return this;
-        }
-
-        @Override
-        public Ansi cursorLeft(int x) {
-            return this;
-        }
-
-        @Override
-        public Ansi cursorDownLine() {
-            return this;
-        }
-
-        @Override
-        public Ansi cursorDownLine(final int n) {
-            return this;
-        }
-
-        @Override
-        public Ansi cursorUpLine() {
-            return this;
-        }
-
-        @Override
-        public Ansi cursorUpLine(final int n) {
-            return this;
-        }
-
-        @Override
-        public Ansi eraseScreen() {
-            return this;
-        }
-
-        @Override
-        public Ansi eraseScreen(Erase kind) {
-            return this;
-        }
-
-        @Override
-        public Ansi eraseLine() {
-            return this;
-        }
-
-        @Override
-        public Ansi eraseLine(Erase kind) {
-            return this;
-        }
-
-        @Override
-        public Ansi scrollUp(int rows) {
-            return this;
-        }
-
-        @Override
-        public Ansi scrollDown(int rows) {
-            return this;
-        }
-
-        @Override
-        public Ansi saveCursorPosition() {
-            return this;
-        }
-
-        @Override
-        public Ansi restoreCursorPosition() {
-            return this;
-        }
-
-        @Override
-        public Ansi reset() {
-            return this;
-        }
-    }
-
-    /**
-     * Creates a new Ansi object and resets the output to the default.
-     */
-    public static Ansi ansi() {
-        if (isEnabled()) {
-            return new Ansi();
-        }
-        else {
-            return new NoAnsi();
-        }
-    }
-
-    /**
-     * Creates a new Ansi object from the specified StringBuilder. This does NOT reset the output back to default.
+     * Creates a new Ansi object from the specified StringBuilder
      */
     public static
     Ansi ansi(StringBuilder builder) {
-        if (isEnabled()) {
-            return new Ansi(builder);
-        }
-        else {
-            return new NoAnsi(builder);
-        }
+        return new Ansi(builder);
     }
 
     /**
-     * Creates a new Ansi object of the specified length and reset the output back to default.
+     * Creates a new Ansi object of the specified length
      */
     public static
     Ansi ansi(int size) {
-
-        if (isEnabled()) {
-            return new Ansi(size);
-        }
-        else {
-            return new NoAnsi(size);
-        }
+        return new Ansi(size);
     }
 
-
-
-
-    private final StringBuilder builder;
-    private final ArrayList<Integer> attributeOptions = new ArrayList<Integer>(5);
+    /**
+     * Creates a new Ansi object from the specified parent
+     */
+    public static
+    Ansi ansi(Ansi ansi) {
+        return new Ansi(ansi);
+    }
 
     /**
-     * Creates a new Ansi object and resets the output to the default.
+     * Creates a new Ansi object
      */
     public
     Ansi() {
         this(new StringBuilder());
-        reset(); // always reset a NEW Ansi object (w/ no parent)
     }
 
     /**
-     * Creates a new Ansi object from the parent. This does NOT reset the output back to default.
+     * Creates a new Ansi object from the parent.
      */
     public
     Ansi(Ansi parent) {
@@ -343,7 +107,7 @@ public class Ansi {
     }
 
     /**
-     * Creates a new Ansi object of the specified length and reset the output back to default.
+     * Creates a new Ansi object of the specified length
      */
     public
     Ansi(int size) {
@@ -352,233 +116,191 @@ public class Ansi {
     }
 
     /**
-     * Creates a new Ansi object from the specified StringBuilder. This does NOT reset the output back to default.
+     * Creates a new Ansi object from the specified StringBuilder
      */
     public
     Ansi(StringBuilder builder) {
         this.builder = builder;
-        // don't know if there is a parent or not, so we don't reset()
     }
 
+    /**
+     * Sets the foreground color of the ANSI output. BRIGHT_* colors are a brighter version of that color. DEFAULT is the color from
+     * the beginning before any other color was applied.
+     *
+     * @param color foreground color to set
+     */
     public
     Ansi fg(Color color) {
-        attributeOptions.add(color.fg());
-        return this;
-    }
+        if (color.isNormal()) {
+            if (color != Color.DEFAULT) {
+                attributeOptions.add(color.fg());
+            }
+            else {
+                attributeOptions.add(AnsiOutputStream.ATTRIBUTE_DEFAULT_FG);
+            }
+        }
+        else {
+            if (color != Color.BRIGHT_DEFAULT) {
+                attributeOptions.add(color.fgBright());
+            }
+            else {
+                attributeOptions.add(AnsiOutputStream.ATTRIBUTE_DEFAULT_FG);
+                attributeOptions.add(AnsiOutputStream.ATTRIBUTE_BOLD);
+            }
+        }
 
-    public
-    Ansi fgDefault() {
-        attributeOptions.add(AnsiOutputStream.ATTRIBUTE_DEFAULT_FG);
-        return this;
-    }
-
-    public
-    Ansi fgBlack() {
-        return this.fg(Color.BLACK);
-    }
-
-    public
-    Ansi fgBlue() {
-        return this.fg(Color.BLUE);
-    }
-
-    public
-    Ansi fgCyan() {
-        return this.fg(Color.CYAN);
-    }
-
-    public
-    Ansi fgGreen() {
-        return this.fg(Color.GREEN);
-    }
-
-    public
-    Ansi fgMagenta() {
-        return this.fg(Color.MAGENTA);
-    }
-
-    public
-    Ansi fgRed() {
-        return this.fg(Color.RED);
-    }
-
-    public
-    Ansi fgYellow() {
-        return this.fg(Color.YELLOW);
-    }
-
-    public
-    Ansi fgWhite() {
-        return this.fg(Color.WHITE);
-    }
-
-    public
-    Ansi fgBright(Color color) {
-        attributeOptions.add(color.fgBright());
-        return this;
-    }
-
-    public
-    Ansi fgBrightDefault() {
-        attributeOptions.add(AnsiOutputStream.ATTRIBUTE_DEFAULT_FG);
-        attributeOptions.add(AnsiOutputStream.ATTRIBUTE_BOLD);
-        return this;
-    }
-
-    public
-    Ansi fgBrightBlack() {
-        return this.fgBright(Color.BLACK);
-    }
-
-    public
-    Ansi fgBrightBlue() {
-        return this.fgBright(Color.BLUE);
-    }
-
-    public
-    Ansi fgBrightCyan() {
-        return this.fgBright(Color.CYAN);
-    }
-
-    public
-    Ansi fgBrightGreen() {
-        return this.fgBright(Color.GREEN);
-    }
-
-    public
-    Ansi fgBrightMagenta() {
-        return this.fgBright(Color.MAGENTA);
-    }
-
-    public
-    Ansi fgBrightRed() {
-        return this.fgBright(Color.RED);
-    }
-
-    public
-    Ansi fgBrightYellow() {
-        return this.fgBright(Color.YELLOW);
-    }
-
-    public
-    Ansi fgBrightWhite() {
-        return this.fgBright(Color.WHITE);
-    }
-
-
-    public
-    Ansi bg(Color color) {
-        attributeOptions.add(color.bg());
-        return this;
-    }
-
-    public
-    Ansi bgDefault() {
-        attributeOptions.add(AnsiOutputStream.ATTRIBUTE_DEFAULT_BG);
-        return this;
-    }
-
-    public
-    Ansi bgBlack() {
-        return this.bg(Color.BLACK);
-    }
-
-    public
-    Ansi bgBlue() {
-        return this.bg(Color.BLUE);
-    }
-
-    public
-    Ansi bgCyan() {
-        return this.bg(Color.CYAN);
-    }
-
-    public
-    Ansi bgGreen() {
-        return this.bg(Color.GREEN);
-    }
-
-    public
-    Ansi bgMagenta() {
-        return this.bg(Color.MAGENTA);
-    }
-
-    public
-    Ansi bgRed() {
-        return this.bg(Color.RED);
-    }
-
-    public
-    Ansi bgYellow() {
-        return this.bg(Color.YELLOW);
-    }
-
-    public
-    Ansi bgWhite() {
-        return this.bg(Color.WHITE);
-    }
-
-    public
-    Ansi bgBright(Color color) {
-        attributeOptions.add(color.bgBright());
-        return this;
-    }
-
-    public
-    Ansi bgBrightDefault() {
-        attributeOptions.add(AnsiOutputStream.ATTRIBUTE_DEFAULT_BG);
-        attributeOptions.add(AnsiOutputStream.ATTRIBUTE_BOLD);
-        return this;
-    }
-
-
-    public
-    Ansi bgBrightBlack() {
-        return this.bgBright(Color.BLACK);
-    }
-
-    public
-    Ansi bgBrightBlue() {
-        return this.bgBright(Color.BLUE);
-    }
-
-    public
-    Ansi bgBrightCyan() {
-        return this.bgBright(Color.CYAN);
-    }
-
-    public
-    Ansi bgBrightGreen() {
-        return this.bgBright(Color.GREEN);
-    }
-
-    public
-    Ansi bgBrightMagenta() {
-        return this.bgBright(Color.MAGENTA);
-    }
-
-    public
-    Ansi bgBrightRed() {
-        return this.bgBright(Color.RED);
-    }
-
-    public
-    Ansi bgBrightYellow() {
-        return this.bgBright(Color.YELLOW);
-    }
-
-    public
-    Ansi bgBrightWhite() {
-        return this.bgBright(Color.WHITE);
-    }
-
-    public
-    Ansi a(Attribute attribute) {
-        attributeOptions.add(attribute.value());
         return this;
     }
 
     /**
+     * Sets the background color of the ANSI output. BRIGHT_* colors are a brighter version of that color. DEFAULT is the color from
+     * the beginning before any other color was applied.
+     *
+     * @param color background color to set
+     */
+    public
+    Ansi bg(Color color) {
+        if (color.isNormal()) {
+            if (color != Color.DEFAULT) {
+                attributeOptions.add(color.bg());
+            }
+            else {
+                attributeOptions.add(AnsiOutputStream.ATTRIBUTE_DEFAULT_BG);
+            }
+        }
+        else {
+            if (color != Color.BRIGHT_DEFAULT) {
+                attributeOptions.add(color.bgBright());
+            }
+            else {
+                attributeOptions.add(AnsiOutputStream.ATTRIBUTE_DEFAULT_BG);
+                attributeOptions.add(AnsiOutputStream.ATTRIBUTE_BOLD);
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Moves the cursor y (default 1) cells in the given direction. If the cursor is already at the edge of the screen, this has no effect.
+     */
+    public
+    Ansi cursorUp(final int y) {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_UP, y);
+    }
+
+    /**
+     * Moves the cursor y (default 1) cells in the given direction. If the cursor is already at the edge of the screen, this has no effect.
+     */
+    public
+    Ansi cursorDown(final int y) {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_DOWN, y);
+    }
+
+    /**
+     * Moves the cursor x (default 1) cells in the given direction. If the cursor is already at the edge of the screen, this has no effect.
+     */
+    public
+    Ansi cursorRight(final int x) {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_FORWARD, x);
+    }
+
+    /**
+     * Moves the cursor x (default 1) cells in the given direction. If the cursor is already at the edge of the screen, this has no effect.
+     */
+    public
+    Ansi cursorLeft(final int x) {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_BACK, x);
+    }
+
+
+    /**
+     * Moves the cursor 1 cell cells in the given direction. If the cursor is already at the edge of the screen, this has no effect.
+     */
+    public
+    Ansi cursorUp() {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_UP);
+    }
+
+    /**
+     * Moves the cursor 1 cell cells in the given direction. If the cursor is already at the edge of the screen, this has no effect.
+     */
+    public
+    Ansi cursorDown() {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_DOWN);
+    }
+
+    /**
+     * Moves the cursor 1 cell cells in the given direction. If the cursor is already at the edge of the screen, this has no effect.
+     */
+    public
+    Ansi cursorRight() {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_FORWARD);
+    }
+
+    /**
+     * Moves the cursor 1 cell cells in the given direction. If the cursor is already at the edge of the screen, this has no effect.
+     */
+    public
+    Ansi cursorLeft() {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_BACK);
+    }
+
+    /**
+     * Moves cursor to beginning of the line n (default 1) lines down.
+     */
+    public
+    Ansi cursorDownLine(final int n) {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_DOWN_LINE, n);
+    }
+
+    /**
+     * Moves cursor to beginning of the line n (default 1) lines up.
+     */
+    public
+    Ansi cursorUpLine(final int n) {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_UP_LINE, n);
+    }
+
+
+    /**
+     * Moves cursor to beginning of the line 1 line down.
+     */
+    public
+    Ansi cursorDownLine() {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_DOWN_LINE);
+    }
+
+
+    /**
+     * Moves cursor to beginning of the line 1 lines up.
+     */
+    public
+    Ansi cursorUpLine() {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_UP_LINE);
+    }
+
+    /**
+     * Moves the cursor to column n (default 1).
+     * @param n is 1 indexed (the very first value is 1, not 0)
+     */
+    public
+    Ansi cursorToColumn(final int n) {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_TO_COL, n);
+    }
+
+    /**
+     * Moves the cursor to column 1. The very first value is 1, not 0.
+     */
+    public
+    Ansi cursorToColumn() {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_TO_COL);
+    }
+
+    /**
+     * Moves the cursor to row x, column y.
+     *
+     * The values are 1-based, the top left corner.
+     *
      * @param x is 1 indexed (the very first value is 1, not 0)
      * @param y is 1 indexed (the very first value is 1, not 0)
      */
@@ -588,188 +310,279 @@ public class Ansi {
     }
 
     /**
-     * @param x is 1 indexed (the very first value is 1, not 0)
+     * Moves the cursor to row 1, column 1 (top left corner).
      */
     public
-    Ansi cursorToColumn(final int x) {
-        return appendEscapeSequence(AnsiOutputStream.CURSOR_TO_COL, x);
+    Ansi cursor() {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_POS);
     }
 
+    /**
+     * Clears part of the screen, by default clear everything forwards of the cursor
+     *
+     * @param kind
+     *          - {@link Erase#FORWARD} (or missing), clear from cursor to end of screen.
+     *          - {@link Erase#BACKWARD}, clear from cursor to beginning of the screen.
+     *          - {@link Erase#ALL}, clear entire screen (and moves cursor to upper left on DOS ANSI.SYS).
+     */
     public
-    Ansi cursorUp(final int y) {
-        return appendEscapeSequence(AnsiOutputStream.CURSOR_UP, y);
+    Ansi eraseScreen(final Erase kind) {
+        if (kind == null) {
+            return eraseScreen();
+        }
+
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_ERASE_SCREEN, kind.value());
     }
 
-    public
-    Ansi cursorDown(final int y) {
-        return appendEscapeSequence(AnsiOutputStream.CURSOR_DOWN, y);
-    }
-
-    public
-    Ansi cursorRight(final int x) {
-        return appendEscapeSequence(AnsiOutputStream.CURSOR_RIGHT, x);
-    }
-
-    public
-    Ansi cursorLeft(final int x) {
-        return appendEscapeSequence(AnsiOutputStream.CURSOR_LEFT, x);
-    }
-
-    public
-    Ansi cursorDownLine() {
-        return appendEscapeSequence(AnsiOutputStream.CURSOR_DOWN_LINE);
-    }
-
-    public
-    Ansi cursorDownLine(final int n) {
-        return appendEscapeSequence(AnsiOutputStream.CURSOR_DOWN_LINE, n);
-    }
-
-    public
-    Ansi cursorUpLine() {
-        return appendEscapeSequence(AnsiOutputStream.CURSOR_UP_LINE);
-    }
-
-    public
-    Ansi cursorUpLine(final int n) {
-        return appendEscapeSequence(AnsiOutputStream.CURSOR_UP_LINE, n);
-    }
-
+    /**
+     * Clears everything forwards of the cursor
+     */
     public
     Ansi eraseScreen() {
         return appendEscapeSequence(AnsiOutputStream.CURSOR_ERASE_SCREEN, Erase.ALL.value());
     }
 
-    public
-    Ansi eraseScreen(final Erase kind) {
-        return appendEscapeSequence(AnsiOutputStream.CURSOR_ERASE_SCREEN, kind.value());
-    }
-
-    public
-    Ansi eraseLine() {
-        return appendEscapeSequence(AnsiOutputStream.CURSOR_ERASE_LINE);
-    }
-
+    /**
+     * Erases part of the line.
+     *
+     * @param kind
+     *      - {@link Erase#FORWARD} (or missing), clear from cursor to the end of the line.
+     *      - {@link Erase#BACKWARD}, clear from cursor to beginning of the line.
+     *      - {@link Erase#ALL}, clear entire line. Cursor position does not change.
+     */
     public
     Ansi eraseLine(final Erase kind) {
         return appendEscapeSequence(AnsiOutputStream.CURSOR_ERASE_LINE, kind.value());
     }
 
+    /**
+     * Erases from cursor to the end of the line.
+     */
     public
-    Ansi scrollUp(final int rows) {
-        return appendEscapeSequence(AnsiOutputStream.PAGE_SCROLL_UP, rows);
+    Ansi eraseLine() {
+        return appendEscapeSequence(AnsiOutputStream.CURSOR_ERASE_LINE);
     }
 
+
+
+    /**
+     * Scroll whole page up by n (default 1) lines. New lines are added at the bottom.
+     */
     public
-    Ansi scrollDown(final int rows) {
-        return appendEscapeSequence(AnsiOutputStream.PAGE_SCROLL_DOWN, rows);
+    Ansi scrollUp(final int n) {
+        return appendEscapeSequence(AnsiOutputStream.SCROLL_UP, n);
     }
 
+    /**
+     * Scroll whole page up by 1 line. New lines are added at the bottom.
+     */
+    public
+    Ansi scrollUp() {
+        return appendEscapeSequence(AnsiOutputStream.SCROLL_UP);
+    }
+
+    /**
+     * Scroll whole page down by n (default 1) lines. New lines are added at the top.
+     */
+    public
+    Ansi scrollDown(final int n) {
+        return appendEscapeSequence(AnsiOutputStream.SCROLL_DOWN, n);
+    }
+
+    /**
+     * Scroll whole page down by 1 line. New lines are added at the top.
+     */
+    public
+    Ansi scrollDown() {
+        return appendEscapeSequence(AnsiOutputStream.SCROLL_DOWN);
+    }
+
+    /**
+     * Saves the cursor position.
+     */
     public
     Ansi saveCursorPosition() {
         return appendEscapeSequence(AnsiOutputStream.SAVE_CURSOR_POS);
     }
 
+    /**
+     * Restores the cursor position.
+     */
     public
     Ansi restoreCursorPosition() {
         return appendEscapeSequence(AnsiOutputStream.RESTORE_CURSOR_POS);
     }
 
+    /**
+     * Resets all of the attributes on the ANSI stream
+     */
     public
     Ansi reset() {
         return a(Attribute.RESET);
     }
 
+    /**
+     * Bold enabled
+     */
     public
     Ansi bold() {
         return a(Attribute.BOLD);
     }
 
+    /**
+     * Bold disabled
+     */
     public
     Ansi boldOff() {
         return a(Attribute.BOLD_OFF);
     }
 
+    /**
+     * Faint enabled (not widely supported)
+     */
     public
     Ansi faint() {
         return a(Attribute.FAINT);
     }
 
+    /**
+     * Faint disabled (not widely supported)
+     */
     public
     Ansi faintOff() {
         return a(Attribute.FAINT_OFF);
     }
 
+    /**
+     * Italic enabled (not widely supported. Sometimes treated as inverse)
+     */
     public
     Ansi italic() {
         return a(Attribute.ITALIC);
     }
 
+    /**
+     * Italic disabled (not widely supported. Sometimes treated as inverse)
+     */
     public
     Ansi italicOff() {
         return a(Attribute.ITALIC_OFF);
     }
 
+    /**
+     *  Underline; Single
+     */
     public
     Ansi underline() {
         return a(Attribute.UNDERLINE);
     }
 
+    /**
+     *  Underline; Double
+     */
     public
     Ansi underlineDouble() {
         return a(Attribute.UNDERLINE_DOUBLE);
     }
 
+    /**
+     *  Underline disabled
+     */
     public
     Ansi underlineOff() {
         return a(Attribute.UNDERLINE_OFF);
     }
 
+    /**
+     * Blink; Slow  less than 150 per minute
+     */
     public
     Ansi blinkSlow() {
         return a(Attribute.BLINK_SLOW);
     }
 
+    /**
+     * Blink; Rapid 150 per minute or more
+     */
     public
     Ansi blinkFast() {
         return a(Attribute.BLINK_FAST);
     }
 
+    /**
+     * Blink disabled
+     */
     public
     Ansi blinkOff() {
         return a(Attribute.BLINK_OFF);
     }
 
+    /**
+     * Negative inverse or reverse; swap foreground and background
+     */
     public
     Ansi negative() {
         return a(Attribute.NEGATIVE);
     }
 
+    /**
+     * Negative disabled (back to normal)
+     */
     public
     Ansi negativeOff() {
         return a(Attribute.NEGATIVE_OFF);
     }
 
+    /**
+     * Conceal on
+     */
     public
     Ansi conceal() {
         return a(Attribute.CONCEAL);
     }
 
+    /**
+     * Conceal off
+     */
     public
     Ansi concealOff() {
         return a(Attribute.CONCEAL_OFF);
     }
 
+    /**
+     * Strikethrough enabled
+     */
     public
     Ansi strikethrough() {
         return a(Attribute.STRIKETHROUGH);
     }
 
+    /**
+     * Strikethrough disabled
+     */
     public
     Ansi strikethroughOff() {
         return a(Attribute.STRIKETHROUGH_OFF);
     }
 
+    /**
+     * Appends an attribute (color/etc)
+     *
+     * @param attribute the Attribute (color/etc) to be appended to the ANSI stream
+     * @return this
+     */
+    public
+    Ansi a(Attribute attribute) {
+        attributeOptions.add(attribute.value());
+        return this;
+    }
+
+    /**
+     * Appends a String
+     *
+     * @param value value to be appended to the ANSI stream
+     * @return this
+     */
     public
     Ansi a(final String value) {
         flushAttributes();
@@ -777,6 +590,12 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a boolean
+     *
+     * @param value value to be appended to the ANSI stream
+     * @return this
+     */
     public
     Ansi a(final boolean value) {
         flushAttributes();
@@ -784,6 +603,12 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a char
+     *
+     * @param value value to be appended to the ANSI stream
+     * @return this
+     */
     public
     Ansi a(final char value) {
         flushAttributes();
@@ -791,13 +616,25 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a char array + offset + length
+     *
+     * @param valueArray value to be appended to the ANSI stream
+     * @return this
+     */
     public
-    Ansi a(final char[] value, final int offset, final int len) {
+    Ansi a(final char[] valueArray, final int offset, final int length) {
         flushAttributes();
-        builder.append(value, offset, len);
+        builder.append(valueArray, offset, length);
         return this;
     }
 
+    /**
+     * Appends a char array
+     *
+     * @param value value to be appended to the ANSI stream
+     * @return this
+     */
     public
     Ansi a(final char[] value) {
         flushAttributes();
@@ -805,6 +642,12 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a CharSequence + start + end
+     *
+     * @param value value to be appended to the ANSI stream
+     * @return this
+     */
     public
     Ansi a(final CharSequence value, final int start, final int end) {
         flushAttributes();
@@ -812,6 +655,12 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a CharSequence
+     *
+     * @param value value to be appended to the ANSI stream
+     * @return this
+     */
     public
     Ansi a(final CharSequence value) {
         flushAttributes();
@@ -819,6 +668,12 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a double
+     *
+     * @param value value to be appended to the ANSI stream
+     * @return this
+     */
     public
     Ansi a(final double value) {
         flushAttributes();
@@ -826,6 +681,12 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a float
+     *
+     * @param value value to be appended to the ANSI stream
+     * @return this
+     */
     public
     Ansi a(final float value) {
         flushAttributes();
@@ -833,6 +694,12 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a int
+     *
+     * @param value value to be appended to the ANSI stream
+     * @return this
+     */
     public
     Ansi a(final int value) {
         flushAttributes();
@@ -840,6 +707,12 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a long
+     *
+     * @param value value to be appended to the ANSI stream
+     * @return this
+     */
     public
     Ansi a(final long value) {
         flushAttributes();
@@ -847,6 +720,12 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a Object
+     *
+     * @param value value to be appended to the ANSI stream
+     * @return this
+     */
     public
     Ansi a(final Object value) {
         flushAttributes();
@@ -854,6 +733,12 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a StringBuilder
+     *
+     * @param value value to be appended to the ANSI stream
+     * @return this
+     */
     public
     Ansi a(final StringBuilder value) {
         flushAttributes();
@@ -861,6 +746,12 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a StringBuffer
+     *
+     * @param value value to be appended to the ANSI stream
+     * @return this
+     */
     public
     Ansi a(final StringBuffer value) {
         flushAttributes();
@@ -868,6 +759,11 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a new line
+     *
+     * @return this
+     */
     public
     Ansi newline() {
         flushAttributes();
@@ -875,6 +771,13 @@ public class Ansi {
         return this;
     }
 
+    /**
+     * Appends a formatted string
+     *
+     * @param pattern String.format pattern to use
+     * @param args arguments to use in the formatted string
+     * @return this
+     */
     public
     Ansi format(final String pattern, final Object... args) {
         flushAttributes();
@@ -910,15 +813,8 @@ public class Ansi {
     ///////////////////////////////////////////////////////////////////
     // Private Helper Methods
     ///////////////////////////////////////////////////////////////////
-
-    private
-    Ansi appendCommandSequence(final char command) {
-        flushAttributes();
-        builder.append(FIRST_ESC_CHAR);
-        builder.append(SECOND_ESC_CHAR);
-        builder.append(command);
-        return this;
-    }
+    private static final char FIRST_ESC_CHAR = 27;
+    private static final char SECOND_ESC_CHAR = '[';
 
     private
     Ansi appendEscapeSequence(final char command) {
@@ -950,10 +846,10 @@ public class Ansi {
         if( attributeOptions.isEmpty() ) {
             return;
         }
-        if (attributeOptions.size() == 1 && attributeOptions.get(0) == 0) {
+        if (attributeOptions.size() == 1 && attributeOptions.get(0) == ATTRIBUTE_RESET) {
             builder.append(FIRST_ESC_CHAR);
             builder.append(SECOND_ESC_CHAR);
-            builder.append(AnsiOutputStream.TEXT_ATTRIBUTE);
+            builder.append(ATTRIBUTE_RESET);
         } else {
             _appendEscapeSequence(AnsiOutputStream.TEXT_ATTRIBUTE, attributeOptions.toArray());
         }

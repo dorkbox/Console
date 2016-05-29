@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 dorkbox, llc
+ * Copyright 2016 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.console;
+package dorkbox.console.util;
 
-public class TerminalType {
+/**
+ * Used for single char input
+ */
+public
+class CharHolder {
+    // default is nothing (0)
+    public char character = (char) 0;
 
-
-
+    public
+    CharHolder() {
+    }
 }

@@ -39,7 +39,9 @@ class CONSOLE_SCREEN_BUFFER_INFO extends Structure {
     }
 
     @Override
-    public String toString() {
-        return "Size: " + size + " CursorPos: " + cursorPosition + " Attribs: " + attributes + " Window: " + window + " MaxWindowSize: " + maximumWindowSize;
+    public
+    String toString() {
+        return "Size: " + size + " CursorPos: " + cursorPosition + " Attribs: " + attributes + " Window: " + window + " MaxWindowSize: " +
+               maximumWindowSize;
     }
 }

@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 import org.junit.Test;
 
@@ -29,6 +30,7 @@ import dorkbox.console.output.HtmlAnsiOutputStream;
  * @author <a href="http://code.dblock.org">Daniel Doubrovkine</a>
  */
 public class HtmlAnsiOutputStreamTest {
+    private static final Charset charset = Charset.forName("UTF-8");
 
 	@Test
 	public void testNoMarkup() throws IOException {
@@ -82,8 +84,9 @@ public class HtmlAnsiOutputStreamTest {
 	private String colorize(String text) throws IOException {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		HtmlAnsiOutputStream hos = new HtmlAnsiOutputStream(os);
-		hos.write(text.getBytes("UTF-8"));
+
+        hos.write(text.getBytes(charset));
 		hos.close();
-		return new String(os.toByteArray(), "UTF-8");
+		return new String(os.toByteArray(), charset);
 	}
 }

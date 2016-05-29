@@ -1,4 +1,19 @@
 /*
+ * Copyright 2016 dorkbox, llc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ *
  * Copyright (C) 2009 the original author(s).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +28,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package dorkbox.console.output;
 
 import java.util.HashMap;
@@ -39,6 +53,7 @@ import java.util.Map;
  * <pre>
  *   <tt>@|bold,red Warning!|@</tt>
  * </pre>
+ * For Colors, FG_x and BG_x are supported, as are BRIGHT_x (and consequently, FG_BRIGHT_x)
  *
  * @author dorkbox, llc
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
@@ -55,7 +70,13 @@ class AnsiRenderer {
     private static final int BEGIN_TOKEN_LEN = 2;
     private static final int END_TOKEN_LEN = 2;
 
-    private static Map<String, AnsiCode> codeMap = new HashMap<String, AnsiCode>(32);
+    private static Map<String, AnsiCodeMap> codeMap = new HashMap<String, AnsiCodeMap>(32);
+
+    static {
+        // have to make sure that all the different categories are added to our map.
+        Color red = Color.RED;
+        Attribute bold = Attribute.BOLD;
+    }
 
     static
     void reg(Enum anEnum, String codeName) {
@@ -64,11 +85,11 @@ class AnsiRenderer {
 
     static
     void reg(Enum anEnum, String codeName, boolean isBackgroundColor) {
-        codeMap.put(codeName, new AnsiCode(anEnum, codeName, isBackgroundColor));
+        codeMap.put(codeName, new AnsiCodeMap(anEnum, isBackgroundColor));
     }
 
     /**
-     * Renders {@link AnsiCode} names on the given Ansi.
+     * Renders {@link AnsiCodeMap} names on the given Ansi.
      *
      * @param ansi The Ansi to render upon
      * @param codeNames The code names to render
@@ -82,26 +103,26 @@ class AnsiRenderer {
     }
 
     /**
-     * Renders a {@link AnsiCode} name on the given Ansi.
+     * Renders a {@link AnsiCodeMap} name on the given Ansi.
      *
      * @param ansi The Ansi to render upon
      * @param codeName The code name to render
      */
     public static
     Ansi render(Ansi ansi, String codeName) {
-        AnsiCode ansiCode = codeMap.get(codeName.toUpperCase(Locale.ENGLISH));
-        assert ansiCode != null : "Invalid ANSI code name: '" + codeName + "'";
+        AnsiCodeMap ansiCodeMap = codeMap.get(codeName.toUpperCase(Locale.ENGLISH));
+        assert ansiCodeMap != null : "Invalid ANSI code name: '" + codeName + "'";
 
-        if (ansiCode.isColor()) {
-            if (ansiCode.isBackgroundColor()) {
-                ansi = ansi.bg(ansiCode.getColor());
+        if (ansiCodeMap.isColor()) {
+            if (ansiCodeMap.isBackgroundColor()) {
+                ansi = ansi.bg(ansiCodeMap.getColor());
             }
             else {
-                ansi = ansi.fg(ansiCode.getColor());
+                ansi = ansi.fg(ansiCodeMap.getColor());
             }
         }
-        else if (ansiCode.isAttribute()) {
-            ansi = ansi.a(ansiCode.getAttribute());
+        else if (ansiCodeMap.isAttribute()) {
+            ansi = ansi.a(ansiCodeMap.getAttribute());
         } else {
             assert false : "Undetermined ANSI code name: '" + codeName + "'";
         }
@@ -110,7 +131,7 @@ class AnsiRenderer {
     }
 
     /**
-     * Renders text using the {@link AnsiCode} names.
+     * Renders text using the {@link AnsiCodeMap} names.
      *
      * @param text The text to render
      * @param codeNames The code names to render
@@ -167,7 +188,7 @@ class AnsiRenderer {
     }
 
     /**
-     * Renders {@link AnsiCode} names as an ANSI escape string.
+     * Renders {@link AnsiCodeMap} names as an ANSI escape string.
      *
      * @param codeNames The code names to render
      *

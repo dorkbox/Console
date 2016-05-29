@@ -23,28 +23,37 @@ import com.sun.jna.Structure;
 /**
  * https://msdn.microsoft.com/en-us/library/ms686311%28VS.85%29.aspx
  */
-public class SMALL_RECT extends Structure {
-    static public class ByReference extends SMALL_RECT implements Structure.ByReference { }
-
+@SuppressWarnings("NumericCastThatLosesPrecision")
+public
+class SMALL_RECT extends Structure {
     public short left;
     public short top;
     public short right;
     public short bottom;
 
-    public short width() {
-        return (short) (this.right-this.left);
+    public
+    short width() {
+        return (short) (this.right - this.left);
     }
-    public short height() {
-        return (short) (this.bottom-this.top);
+
+    public
+    short height() {
+        return (short) (this.bottom - this.top);
     }
 
     @Override
-    protected List<String> getFieldOrder() {
+    protected
+    List<String> getFieldOrder() {
         return Arrays.asList("left", "top", "right", "bottom");
     }
 
     @Override
-    public String toString() {
+    public
+    String toString() {
         return "LTRB: " + left + "," + top + "," + right + "," + bottom;
     }
+
+
+    static public
+    class ByReference extends SMALL_RECT implements Structure.ByReference {}
 }

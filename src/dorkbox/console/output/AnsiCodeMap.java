@@ -1,0 +1,50 @@
+/*
+ * Copyright 2016 dorkbox, llc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package dorkbox.console.output;
+
+/**
+ * Used for determining what ANSI attribute to use based on a formal name
+ */
+class AnsiCodeMap {
+    private final Enum anEnum;
+    private final boolean isColorForBackground;
+
+    AnsiCodeMap(final Enum anEnum, final boolean isColorForBackground) {
+        this.anEnum = anEnum;
+        this.isColorForBackground = isColorForBackground;
+    }
+
+    boolean isColor() {
+        return anEnum instanceof Color;
+    }
+
+    boolean isBackgroundColor() {
+        return isColorForBackground;
+    }
+
+    Color getColor() {
+        return (Color) anEnum;
+    }
+
+    boolean isAttribute() {
+        return anEnum instanceof Attribute;
+    }
+
+    Attribute getAttribute() {
+        return (Attribute) anEnum;
+    }
+}

@@ -18,6 +18,7 @@ package dorkbox.console.output;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 /**
  * An ANSI string which reports the size of rendered text correctly (ignoring any ANSI escapes).
@@ -27,6 +28,7 @@ import java.io.IOException;
  */
 public
 class AnsiString implements CharSequence {
+    private static final Charset CHARSET = Charset.forName("UTF-8");
     private final CharSequence encoded;
 
     private final CharSequence plain;
@@ -47,7 +49,7 @@ class AnsiString implements CharSequence {
 
         try {
             out.write(str.toString()
-                         .getBytes());
+                         .getBytes(CHARSET));
             out.flush();
             out.close();
         } catch (IOException e) {
