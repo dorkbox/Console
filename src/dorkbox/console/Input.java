@@ -28,6 +28,7 @@ import dorkbox.console.input.PosixTerminal;
 import dorkbox.console.input.Terminal;
 import dorkbox.console.input.UnsupportedTerminal;
 import dorkbox.console.input.WindowsTerminal;
+import dorkbox.console.output.Ansi;
 import dorkbox.console.util.CharHolder;
 import dorkbox.objectPool.ObjectPool;
 import dorkbox.objectPool.PoolableObject;
@@ -95,13 +96,13 @@ class Input {
         Throwable didFallbackE = null;
         Terminal term;
         try {
-            if (type.equals(Console.UNIX)) {
+            if (type.equals("UNIX")) {
                 term = new PosixTerminal();
             }
-            else if (type.equals(Console.WINDOWS)) {
+            else if (type.equals("WINDOWS")) {
                 term = new WindowsTerminal();
             }
-            else if (type.equals(Console.NONE)) {
+            else if (type.equals("NONE")) {
                 term = new UnsupportedTerminal();
             }
             else {
@@ -320,15 +321,12 @@ class Input {
     void run() {
         Logger logger2 = logger;
 
-        final boolean ansiEnabled = Console.ENABLE_ANSI;
-//        Ansi ansi = Ansi.ansi();
-//        PrintStream out = AnsiConsole.out;
+        Ansi ansi = null;
         PrintStream out = System.out;
 
         int typedChar;
         char asChar;
         final char overWriteChar = ' ';
-        boolean enableBackspace = Console.ENABLE_BACKSPACE;
 
 
         // don't type ; in a bash shell, it quits everything
@@ -355,7 +353,7 @@ class Input {
                 // now to handle readLine stuff
 
                 // if we type a backspace key, swallow it + previous in READLINE. READCHAR will have it passed anyways.
-                if (enableBackspace && asChar == '\b') {
+                if (Console.ENABLE_BACKSPACE && asChar == '\b') {
                     int position = 0;
                     char[] overwrite = null;
 
@@ -389,11 +387,15 @@ class Input {
                         }
                     }
 
-                    if (ansiEnabled && overwrite != null) {
+                    if (Console.ENABLE_ANSI && overwrite != null) {
+                        if (ansi == null) {
+                            ansi = Ansi.ansi();
+                        }
+
                         // move back however many, over write, then go back again
-//                        out.print(ansi.cursorToColumn(position));
+                        out.print(ansi.cursorToColumn(position));
                         out.print(overwrite);
-//                        out.print(ansi.cursorToColumn(position));
+                        out.print(ansi.cursorToColumn(position));
                         out.flush();
                     }
                 }

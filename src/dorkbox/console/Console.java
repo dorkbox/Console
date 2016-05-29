@@ -36,7 +36,6 @@ import dorkbox.util.Property;
 public
 class Console {
 
-
     /**
      * If true, allows an ANSI output stream to be created, otherwise a NO-OP stream is created instead
      */
@@ -62,9 +61,6 @@ class Console {
     @Property
     public static volatile boolean ENABLE_INTERRUPT = false;
 
-    @Property
-    public static char PASSWORD_ECHO_CHAR = '*';
-
     /**
      * Enables the backspace key to delete characters in the line buffer and (if ANSI is enabled) from the screen.
      */
@@ -73,14 +69,13 @@ class Console {
 
 
 
-    // OS types supported by the input console. Default is AUTO
-    public static final String AUTO = "auto";
-    public static final String UNIX = "unix";
-    public static final String WINDOWS = "windows";
-
-    public static final String NONE = "none";  // this is the same as unsupported
-
-    // valid are what's above
+    /**
+     * Valid options are:
+     *  AUTO - automatically determine which OS/console type to use
+     *  UNIX - try to control a UNIX console
+     *  WINDOWS - try to control a WINDOWS console
+     *  NONE - do not try to control anything, only line input is supported
+     */
     @Property
     public static final String INPUT_CONSOLE_TYPE = "AUTO";
 
@@ -93,7 +88,6 @@ class Console {
     private static int installed = 0;
     private static PrintStream out;
     private static PrintStream err;
-
 
 
     /**
@@ -207,7 +201,6 @@ class Console {
     public static synchronized
     void reset() {
         if (installed >= 1) {
-            // TODO: make this reset readLine, etc as well?
             try {
                 System.out.write(AnsiOutputStream.RESET_CODE);
             } catch (IOException e) {
