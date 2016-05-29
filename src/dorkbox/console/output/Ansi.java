@@ -849,7 +849,7 @@ class Ansi {
         if (attributeOptions.size() == 1 && attributeOptions.get(0) == ATTRIBUTE_RESET) {
             builder.append(FIRST_ESC_CHAR);
             builder.append(SECOND_ESC_CHAR);
-            builder.append(ATTRIBUTE_RESET);
+            builder.append(AnsiOutputStream.TEXT_ATTRIBUTE);
         } else {
             _appendEscapeSequence(AnsiOutputStream.TEXT_ATTRIBUTE, attributeOptions.toArray());
         }
