@@ -46,12 +46,6 @@ class WindowsTerminal extends Terminal {
      */
     private static final int PROCESSED_INPUT = 1;
 
-    /**
-     * The ReadFile or ReadConsole function returns only when a carriage return character is read. If this mode is disable, the functions
-     * return when one or more characters are available.
-     */
-    private static final int ENABLE_LINE_INPUT = 2;
-
     // output stream for "echo" to goto
     private static final PrintStream OUT = System.out;
 
