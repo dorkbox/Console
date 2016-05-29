@@ -154,9 +154,8 @@ class WindowsTerminal extends Terminal {
                 OUT.println();
             }
             else {
-                OUT.print(asChar);
+                OUT.write(asChar);
             }
-
             // have to flush, otherwise we'll never see the chars on screen
             OUT.flush();
         }
