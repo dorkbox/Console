@@ -319,18 +319,14 @@ class Input {
 
     private static
     void run() {
-        Logger logger2 = logger;
-
-        Ansi ansi = null;
-        PrintStream out = System.out;
-
-        int typedChar;
-        char asChar;
+        final Logger logger2 = logger;
+        final PrintStream out = System.out;
         final char overWriteChar = ' ';
 
+        Ansi ansi = null;
+        int typedChar;
+        char asChar;
 
-        // don't type ; in a bash shell, it quits everything
-        // \n is replaced by \r in unix terminal?
         while ((typedChar = terminal.read()) != -1) {
             synchronized (inputLock) {
                 // don't let anyone add a new reader while we are still processing the current actions
