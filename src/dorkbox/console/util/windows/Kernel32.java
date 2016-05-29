@@ -113,13 +113,13 @@ public class Kernel32 {
      * https://msdn.microsoft.com/en-us/library/ms682662%28VS.85%29.aspx
      */
     public static native
-    int FillConsoleOutputAttribute(HANDLE consoleOutput, short attribute, int length, COORD.ByValue writeCoord, int[] numberOfAttrsWritten);
+    int FillConsoleOutputAttribute(HANDLE consoleOutput, short attribute, int length, COORD.ByValue writeCoord, IntByReference numberOfAttrsWritten);
 
     /**
      * https://msdn.microsoft.com/en-us/library/ms682663%28VS.85%29.aspx
      */
     public static native
-    int FillConsoleOutputCharacterW(HANDLE consoleOutput, char character, int length, COORD.ByValue writeCoord, int[] numberOfCharsWritten);
+    int FillConsoleOutputCharacterW(HANDLE consoleOutput, char character, int length, COORD.ByValue writeCoord, IntByReference numberOfCharsWritten);
 
 
 
@@ -134,6 +134,7 @@ public class Kernel32 {
      */
     public static native
     int SetConsoleMode(HANDLE handle, int mode);
+
 
     /**
      * https://msdn.microsoft.com/en-us/library/ms684961(v=VS.85).aspx

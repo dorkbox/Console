@@ -93,6 +93,9 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
     private volatile short savedX = (short) -1;
     private volatile short savedY = (short) -1;
 
+    // reused vars
+    private IntByReference written = new IntByReference();
+
     public
     WindowsAnsiOutputStream(final OutputStream os, int fileHandle) throws IOException {
         super(os);
@@ -166,7 +169,7 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
     protected
     void processEraseScreen(final int eraseOption) throws IOException {
         getConsoleInfo();
-        int[] written = new int[1];
+
         switch (eraseOption) {
             case ERASE_ALL:
                 COORD topLeft = new COORD();
@@ -198,7 +201,7 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
     protected
     void processEraseLine(final int eraseOption) throws IOException {
         getConsoleInfo();
-        int[] written = new int[1];
+
         switch (eraseOption) {
             case ERASE_ALL:
                 COORD currentRow = info.cursorPosition.asValue();
@@ -407,18 +410,18 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
         SMALL_RECT.ByReference scrollRect = new SMALL_RECT.ByReference();
         COORD.ByValue coordDest = new COORD.ByValue();
 
-        // the content that will be scrolled
-        scrollRect.top = (short) (0);
-        scrollRect.bottom = Short.MAX_VALUE;
+        // the content that will be scrolled (just what is visible in the window)
+        scrollRect.top = (short) (info.cursorPosition.y - info.window.height());
+        scrollRect.bottom = (short) (info.cursorPosition.y);
         scrollRect.left = (short) 0;
         scrollRect.right = (short) (info.size.x - 1);
 
         // The destination for the scroll rectangle is xxx row up/down.
         coordDest.x = (short) 0;
-        coordDest.y = (short) (-rowsToScroll);
+        coordDest.y = (short) (scrollRect.top - rowsToScroll);
 
         // fill the space with whatever color was already there with spaces
-        IntByReference attribs = new IntByReference();
+        IntByReference attribs = written;
         attribs.setValue(info.attributes);
 
         // The clipping rectangle is the same as the scrolling rectangle, so we pass NULL
