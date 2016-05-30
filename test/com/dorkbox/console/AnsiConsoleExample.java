@@ -17,8 +17,8 @@ class AnsiConsoleExample {
     public static
     void main(String[] args) throws IOException {
 
-        Console.systemInstall();
         Console.ENABLE_ANSI = true;
+        Console.ENABLE_ECHO = true;
 
         System.out.println(Ansi.ansi()
                                .fg(Color.BLACK).a("black").bg(Color.BLACK).a("black")
@@ -114,10 +114,9 @@ class AnsiConsoleExample {
 
         System.err.println("ver : " + Console.getVersion());
 
+        System.out.println();
 
         System.out.println("Now testing the input console. 'q' to quit");
-        Console.ENABLE_ECHO = true;
-
         int read;
         while ((read = Console.read()) != 'q') {
             if (Character.isDigit(read)) {
@@ -135,6 +134,12 @@ class AnsiConsoleExample {
 //            System.err.println("READ :" + read + " (" + (char) read + ")");
         }
 
-        Console.systemUninstall();
+        System.out.println();
+
+        System.out.println("Now testing the input console LINE input. 'q' to quit");
+        String line;
+        while (!(line = Console.readLine()).equals("q")) {
+            System.err.println("line: " + line);
+        }
     }
 }
