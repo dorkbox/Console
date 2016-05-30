@@ -112,13 +112,13 @@ class AnsiConsoleExample {
                                    .a("   ")
                                    .restoreCursorPosition());
 
-        System.err.println("ver : " + Console.getVersion());
+        System.out.println("ver : " + Console.getVersion());
 
         System.out.println();
 
         System.out.println("Now testing the input console. 'q' to quit");
         int read;
-        while ((read = Console.read()) != 'q') {
+        while ((read = Console.in().read()) != 'q') {
             if (Character.isDigit(read)) {
                 int numericValue = Character.getNumericValue(read);
                 // reverse if pressing 2
@@ -131,14 +131,14 @@ class AnsiConsoleExample {
                     System.out.flush();  // flush guarantees the terminal moves the way we want
                 }
             }
-//            System.err.println("READ :" + read + " (" + (char) read + ")");
+            System.err.println("char :" + read + " (" + (char) read + ")");
         }
 
         System.out.println();
 
         System.out.println("Now testing the input console LINE input. 'q' to quit");
         String line;
-        while (!(line = Console.readLine()).equals("q")) {
+        while (!(line = Console.in().readLine()).equals("q")) {
             System.err.println("line: " + line);
         }
     }
