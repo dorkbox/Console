@@ -1,20 +1,20 @@
 Console
 =======
 
-Unbuffered input and ANSI output support in consoles for linux, mac, windows. Java 6+
+Unbuffered input and ANSI output support for linux, mac, windows. Java 6+
 
 This library is a optimized combination of [JLine](https://github.com/jline/jline2) and [JAnsi](https://github.com/fusesource/jansi). While it is very similar in functionality to what these libraries provide, there are several things that are significantly different.
 
  1. JNA *direct-mapping* instead of custom JNI/shell execution which is [slightly slower than JNI](https://github.com/java-native-access/jna/blob/master/www/DirectMapping.md) but significantly easier to read, modify, debug, and provide support for non-intel architectures.
  1. Complete implementation of common [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code)
  1. Automatically hooks into `System.err/out` for seamless integration in Java environments
- 1. Automatically detects when an `IDE` is in use (and prevents issues with console corruption)
- 1. Provides buffered and unbuffered input for windows/linux/mac  
- 1. Backspace functionality for line input is preserved (if ANSI is enabled).  
+ 1. Automatically detects when an `IDE` is in use
+   - Prevents issues with console corruption
+   - Provides simulated single character input via `in.read()`, which still requires the enter key to flush the buffer, but feeds single characters at a time
+ 1. Backspace functionality for line input is preserved (if ANSI is enabled, the console is updated as well).
  1. Controls `ECHO` on/off in the console
- 1. Controls `Ctrl-C` (SIGINT) on/off in the console  
- 1. Supports unsupported terminals (for example, while in an IDE ), `in.read()` will still return (a line is split into chars, then fed to consumer) but the enter key must still be pressed.  
- 1. Multi-threaded, intelligent buffering of command input for simultaneous input readers on different threads  
+ 1. Controls `Ctrl-C` (SIGINT) on/off in the console
+ 1. Multi-threaded, intelligent buffering of command input for simultaneous input readers on different threads
   
   
 - This is for cross-platform use, specifically - linux arm/32/64, mac 32/64, and windows 32/64. Java 6+
@@ -43,7 +43,6 @@ Console.ENABLE_BACKSPACE   (type boolean, default value 'true')
  - Enables the backspace key to delete characters in the line buffer and (if ANSI is enabled) from the screen.
         
         
-        
 Console.INPUT_CONSOLE_TYPE   (type String, default value 'AUTO')
  - Used to determine what console to use/hook when AUTO is not correctly working.  
    Valid options are:
@@ -51,7 +50,10 @@ Console.INPUT_CONSOLE_TYPE   (type String, default value 'AUTO')
      - UNIX - try to control a UNIX console
      - WINDOWS - try to control a WINDOWS console
      - NONE - do not try to control anything, only line input is supported 
+
         
+Ansi.restoreSystemStreams()
+ - Restores System.err/out PrintStreams to their ORIGINAL configuration. Useful when using ANSI functionality but do not want to hook into the system.
 ```
 
 
