@@ -114,7 +114,9 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
         }
 
         out.flush();
-        ASSERT(GetConsoleScreenBufferInfo(console, originalInfo), "Could not get the screen info");
+        if (GetConsoleScreenBufferInfo(console, originalInfo) == 0) {
+            throw new IOException("Could not get the screen info");
+        }
     }
 
     private
