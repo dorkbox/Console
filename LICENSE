@@ -1,11 +1,13 @@
-    - Dorkbox InputConsole - Apache 2.0 License
+    - Dorkbox Console - Apache 2.0 License
       https://github.com/dorkbox
       Copyright 2010, dorkbox, llc
-
-
-    - Apache Harmony - Apache 2.0 License
-      http://harmony.apache.org
-      Copyright 2003-2010, The Apache Software Foundation
+       Joris Kuipers
+       Jason Dillon
+       Hiram Chirino
+       Daniel Doubrovkine
+       Torbjorn Granlund
+       David MacKenzie
+        Unbuffered input and ANSI output support for linux, mac, windows. Java 6+
 
 
     - Dorkbox Utils - Apache 2.0 License
@@ -13,14 +15,12 @@
       Copyright 2010, dorkbox, llc
 
 
-    - hawtjni - Apache 2.0 License
-      https://github.com/fusesource/hawtjni
-      Copyright Hiram Chirino
-
-
-    - Jansi - Apache 2.0 License
+    - JAnsi - Apache 2.0 License
       https://github.com/fusesource/jansi
-      Copyright Hiram Chirino
+      Copyright 2009, Progress Software Corporation
+       Joris Kuipers
+       Jason Dillon
+       Hiram Chirino
 
 
     - JLine2 - BSD 2-clause License
