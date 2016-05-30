@@ -35,7 +35,7 @@ import dorkbox.console.util.windows.Kernel32;
  * Terminal implementation for Microsoft Windows.
  */
 public
-class WindowsTerminal extends Terminal {
+class WindowsTerminal extends SupportedTerminal {
 
     // Console mode constants copied <tt>wincon.h</tt>.
     // There are OTHER options, however they DO NOT work with unbuffered input or we just don't care about them.
@@ -113,15 +113,15 @@ class WindowsTerminal extends Terminal {
     }
 
     @Override
-    public
-    void setEchoEnabled(final boolean enabled) {
+    protected
+    void doSetEchoEnabled(final boolean enabled) {
         // only way to do this, console modes DO NOT work
         echoEnabled = enabled;
     }
 
     @Override
-    public
-    void setInterruptEnabled(final boolean enabled) {
+    protected
+    void doSetInterruptEnabled(final boolean enabled) {
         IntByReference mode = new IntByReference();
         GetConsoleMode(console, mode);
 
@@ -138,8 +138,8 @@ class WindowsTerminal extends Terminal {
     }
 
     @Override
-    public final
-    int read() {
+    protected final
+    int doRead() {
         int input = readInput();
 
         if (echoEnabled) {

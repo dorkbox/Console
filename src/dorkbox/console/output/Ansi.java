@@ -32,9 +32,16 @@ package dorkbox.console.output;
 
 import static dorkbox.console.output.AnsiOutputStream.ATTRIBUTE_RESET;
 
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 
 import dorkbox.console.Console;
+import dorkbox.console.util.posix.CLibraryPosix;
+import dorkbox.console.util.windows.Kernel32;
+import dorkbox.util.OS;
 
 /**
  * Provides a fluent API for generating ANSI escape sequences and providing access to streams that support it.
@@ -44,18 +51,53 @@ import dorkbox.console.Console;
  * @author dorkbox, llc
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "WeakerAccess"})
 public
 class Ansi {
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Console.class);
+
+
+    private static final PrintStream original_out = System.out;
+    private static final PrintStream original_err = System.err;
+
+    public static final PrintStream out = createPrintStream(original_out, 1); // STDOUT_FILENO;
+    public static final PrintStream err = createPrintStream(original_err, 2); // STDERR_FILENO
+
     static {
         // make SURE that our console in/out/err are correctly setup BEFORE accessing methods in this class
         Console.getVersion();
+
+        System.setOut(out);
+        System.setErr(err);
+
+        // don't forget we have to shut down the ansi console as well
+        Thread shutdownThread = new Thread() {
+            @Override
+            public
+            void run() {
+                // called when the JVM is shutting down.
+                restoreSystemStreams();
+            }
+        };
+        shutdownThread.setName("Console ANSI stream Shutdown");
+        Runtime.getRuntime().addShutdownHook(shutdownThread);
     }
 
     private static final String NEW_LINE = System.getProperty("line.separator");
 
     private final StringBuilder builder;
     private final ArrayList<Integer> attributeOptions = new ArrayList<Integer>(8);
+
+
+    /**
+     * Restores System.err/out PrintStreams to their ORIGINAL configuration. Useful when using ANSI functionality but do not want to
+     * hook into the system.
+     */
+    public static
+    void restoreSystemStreams() {
+        System.setOut(original_out);
+        System.setErr(original_err);
+    }
 
     /**
      * Creates a new Ansi object
@@ -871,5 +913,90 @@ class Ansi {
         }
         builder.append(command);
         return this;
+    }
+
+    private static boolean isXterm() {
+        String term = System.getenv("TERM");
+        return "xterm".equalsIgnoreCase(term);
+    }
+
+    private static
+    PrintStream createPrintStream(final OutputStream stream, final int fileno) {
+        String type = fileno == 1 ? "OUT" : "ERR";
+
+        if (!Console.ENABLE_ANSI) {
+            // Use the ANSIOutputStream to strip out the ANSI escape sequences.
+            return getStripPrintStream(stream, type);
+        }
+
+        if (!isXterm()) {
+            if (OS.isWindows()) {
+                // check if windows10+ (which natively supports ANSI)
+                if (Kernel32.isWindows10OrGreater()) {
+                    // Just wrap it up so that when we get closed, we reset the attributes.
+                    return defaultPrintStream(stream, type);
+                }
+
+                // On windows we know the console does not interpret ANSI codes..
+                try {
+                    PrintStream printStream = new PrintStream(new WindowsAnsiOutputStream(stream, fileno));
+
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Created a Windows ANSI PrintStream for {}", type);
+                    }
+
+                    return printStream;
+                } catch (Throwable ignore) {
+                    // this happens when JNA is not in the path.. or
+                    // this happens when the stdout is being redirected to a file.
+                    // this happens when the stdout is being redirected to different console.
+                }
+
+                // Use the ANSIOutputStream to strip out the ANSI escape sequences.
+                if (!Console.FORCE_ENABLE_ANSI) {
+                    return getStripPrintStream(stream, type);
+                }
+            } else {
+                // We must be on some unix variant..
+                try {
+                    // If we can detect that stdout is not a tty.. then setup to strip the ANSI sequences..
+                    if (!Console.FORCE_ENABLE_ANSI && CLibraryPosix.isatty(fileno) == 0) {
+                        return getStripPrintStream(stream, type);
+                    }
+                } catch (Throwable ignore) {
+                    // These errors happen if the JNI lib is not available for your platform.
+                }
+            }
+        }
+
+        // By default we assume the terminal can handle ANSI codes.
+        // Just wrap it up so that when we get closed, we reset the attributes.
+        return defaultPrintStream(stream, type);
+    }
+
+    private static
+    PrintStream getStripPrintStream(final OutputStream stream, final String type) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Created a strip-ANSI PrintStream for {}", type);
+        }
+
+        return new PrintStream(new AnsiOutputStream(stream));
+    }
+
+    private static
+    PrintStream defaultPrintStream(final OutputStream stream, final String type) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Created ANSI PrintStream for {}", type);
+        }
+
+        return new PrintStream(new FilterOutputStream(stream) {
+            @Override
+            public
+            void close() throws IOException {
+                write(AnsiOutputStream.RESET_CODE);
+                flush();
+                super.close();
+            }
+        });
     }
 }

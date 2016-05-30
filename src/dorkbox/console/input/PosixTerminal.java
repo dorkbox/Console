@@ -29,7 +29,7 @@ import dorkbox.console.util.posix.Termios;
  * This implementation should work for an reasonable POSIX system.
  */
 public
-class PosixTerminal extends Terminal {
+class PosixTerminal extends SupportedTerminal {
 
     private final Termios original = new Termios();
     private Termios termInfo = new Termios();
@@ -112,14 +112,8 @@ class PosixTerminal extends Terminal {
     }
 
     @Override
-    public final
-    int read() {
-        CLibraryPosix.read(0, inputRef, 1);
-        return inputRef.getValue();
-    }
-
-    public
-    void setEchoEnabled(final boolean enabled) {
+    protected
+    void doSetEchoEnabled(final boolean enabled) {
         // have to re-get them, since flags change everything
         if (CLibraryPosix.tcgetattr(0, this.termInfo) != 0) {
             this.logger.error("Failed to get terminal info");
@@ -137,8 +131,9 @@ class PosixTerminal extends Terminal {
         }
     }
 
-    public
-    void setInterruptEnabled(final boolean enabled) {
+    @Override
+    protected
+    void doSetInterruptEnabled(final boolean enabled) {
         // have to re-get them, since flags change everything
         if (CLibraryPosix.tcgetattr(0, this.termInfo) != 0) {
             this.logger.error("Failed to get terminal info");
@@ -154,5 +149,12 @@ class PosixTerminal extends Terminal {
         if (CLibraryPosix.tcsetattr(0, Termios.TCSANOW, this.termInfo) != 0) {
             this.logger.error("Can not set terminal flags");
         }
+    }
+
+    @Override
+    protected final
+    int doRead() {
+        CLibraryPosix.read(0, inputRef, 1);
+        return inputRef.getValue();
     }
 }

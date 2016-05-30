@@ -17,17 +17,26 @@ package dorkbox.console.input;
 
 import java.io.IOException;
 
+import dorkbox.console.Console;
+
+@SuppressWarnings("unused")
 public abstract
 class Terminal {
 
-    public static final String CONSOLE_ERROR_INIT = "Unable to initialize the input console.";
-    protected static final int DEFAULT_WIDTH = 80;
-    protected static final int DEFAULT_HEIGHT = 24;
-    protected final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
+    static final String CONSOLE_ERROR_INIT = "Unable to initialize the input console.";
 
-    protected
+    static final int DEFAULT_WIDTH = 80;
+    static final int DEFAULT_HEIGHT = 24;
+    final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
+
     Terminal() {
     }
+
+    abstract
+    void doSetInterruptEnabled(final boolean enabled);
+
+    protected abstract
+    void doSetEchoEnabled(final boolean enabled);
 
     public abstract
     void restore() throws IOException;
@@ -38,16 +47,72 @@ class Terminal {
     public abstract
     int getHeight();
 
-    // NOT THREAD SAFE
-    public abstract
-    void setEchoEnabled(final boolean enabled);
-
-    public abstract
-    void setInterruptEnabled(final boolean enabled);
+    /**
+     * Enables or disables CTRL-C behavior in the console
+     */
+    public final
+    void setInterruptEnabled(final boolean enabled) {
+        Console.ENABLE_INTERRUPT = enabled;
+        doSetInterruptEnabled(enabled);
+    }
 
     /**
-     * @return a character from whatever underlying input method the terminal has available.
+     * Enables or disables character echo to stdout
+     */
+    public final
+    void setEchoEnabled(final boolean enabled) {
+        Console.ENABLE_ECHO = enabled;
+        doSetEchoEnabled(enabled);
+    }
+
+    /**
+     * Reads single character input from the console.
+     *
+     * @return -1 if no data or problems
      */
     public abstract
     int read();
+
+    /**
+     * Reads a line of characters from the console as a character array, defined as everything before the 'ENTER' key is pressed
+     *
+     * @return empty char[] if no data
+     */
+    public abstract
+    char[] readLineChars();
+
+    /**
+     * Reads a single line of characters, defined as everything before the 'ENTER' key is pressed
+     * @return null if no data
+     */
+    public
+    String readLine() {
+        char[] line = readLineChars();
+        if (line == null) {
+            return null;
+        }
+        return new String(line);
+    }
+
+    /**
+     * Reads a line of characters from the console as a character array, defined as everything before the 'ENTER' key is pressed
+     *
+     * @return empty char[] if no data
+     */
+    public
+    char[] readLinePassword() {
+        // don't bother in an IDE. it won't work.
+        boolean echoEnabled = Console.ENABLE_ECHO;
+        Console.ENABLE_ECHO = false;
+        char[] readLine0 = readLineChars();
+        Console.ENABLE_ECHO = echoEnabled;
+
+        return readLine0;
+    }
+
+    /**
+     * releases any thread still waiting.
+     */
+    public abstract
+    void close();
 }
