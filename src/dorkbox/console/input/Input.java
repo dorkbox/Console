@@ -79,7 +79,6 @@ class Input {
             consoleThread.setName("Console Input Reader");
             consoleThread.start();
 
-
             // has to be NOT DAEMON thread, since it must run before the app closes.
             // alternatively, shut everything down when the JVM closes.
             Thread shutdownThread = new Thread() {
