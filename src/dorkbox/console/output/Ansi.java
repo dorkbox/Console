@@ -929,6 +929,17 @@ class Ansi {
             return getStripPrintStream(stream, type);
         }
 
+        // intellij idea console supports ANSI colors... but NOT REALLY! (they are off)
+        if (System.getProperty("idea.launcher.bin.path") != null // "run"
+            ||
+            System.getProperty("java.class.path").contains("idea_rt.jar") // "debug"
+            ) {
+
+            // Use the ANSIOutputStream to strip out the ANSI escape sequences.
+            return getStripPrintStream(stream, type);
+        }
+
+
         if (!isXterm()) {
             if (OS.isWindows()) {
                 // check if windows10+ (which natively supports ANSI)
