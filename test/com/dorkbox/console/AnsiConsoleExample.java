@@ -1,6 +1,12 @@
 package com.dorkbox.console;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import dorkbox.console.Console;
 import dorkbox.console.output.Ansi;
@@ -19,6 +25,26 @@ class AnsiConsoleExample {
 
         Console.ENABLE_ANSI = true;
         Console.ENABLE_ECHO = true;
+
+        Console.init();
+
+        System.err.println("System Properties");
+        Properties properties = System.getProperties();
+        for (Map.Entry<Object, Object> prop : properties.entrySet()) {
+            System.err.format("\t%s=%s%n", prop.getKey(), prop.getValue());
+        }
+        System.err.println("");
+        System.err.println("");
+        System.err.println("");
+
+        System.err.println("Runtime Arguments");
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        List<String> arguments = runtimeMxBean.getInputArguments();
+        System.err.println(Arrays.toString(arguments.toArray()));
+
+        System.err.println("");
+        System.err.println("");
+        System.err.println("");
 
         System.out.println(Ansi.ansi()
                                .fg(Color.BLACK).a("black").bg(Color.BLACK).a("black")

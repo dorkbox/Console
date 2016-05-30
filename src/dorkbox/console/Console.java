@@ -91,6 +91,16 @@ class Console {
 
 
     /**
+     * Initializes output streams, necessary when using ANSI for the first time inside of an output stream (as it initializes after
+     * assignment). This is not needed for input streams, since they do not hook System.err/out.
+     */
+    public static
+    void init() {
+        err();
+        out();
+    }
+
+    /**
      * If the standard in supports single character input, then a terminal will be returned that supports it, otherwise a buffered (aka
      * 'normal') input will be returned
      *
