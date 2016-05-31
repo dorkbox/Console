@@ -86,7 +86,7 @@ class Console {
      */
     public static
     String getVersion() {
-        return "2.9";
+        return "3.0";
     }
 
 
