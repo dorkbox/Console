@@ -22,7 +22,7 @@ This library is a optimized combination of [JLine](https://github.com/jline/jlin
 Windows  
 ![Windows](https://raw.githubusercontent.com/dorkbox/Console/master/windows%20console.png)  
 
-Linux/Mac)  
+Linux/Mac  
 ![*nix](https://raw.githubusercontent.com/dorkbox/Console/master/linux%20console.png)  
 
   
