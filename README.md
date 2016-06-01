@@ -19,6 +19,12 @@ This library is a optimized combination of [JLine](https://github.com/jline/jlin
   
 - This is for cross-platform use, specifically - linux arm/32/64, mac 32/64, and windows 32/64. Java 6+
   
+Windows  
+![Windows](https://raw.githubusercontent.com/dorkbox/Console/master/windows%20console.png)  
+
+Linux/Mac)  
+![*nix](https://raw.githubusercontent.com/dorkbox/Console/master/linux%20console.png)  
+
   
 ```
 Customization parameters:
