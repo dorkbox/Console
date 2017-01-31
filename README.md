@@ -72,20 +72,19 @@ Note: This project was inspired (and some parts heavily modified) by the excelle
 
 <h4>We now release to maven!</h4> 
 
-There is a hard dependency in the POM file for the utilities library, which is an extremely small subset of a much larger library; including only what is *necessary* for this particular project to function.
-
-This project is **kept in sync** with the utilities library, so "jar hell" is not an issue. Please note that the util library (in it's entirety) is not added since there are **many** dependencies that are not *necessary* for this project. No reason to require a massive amount of dependencies for one or two classes/methods. 
+This project **includes** some utility classes, which are an extremely small subset of a much larger library; including only what is *necessary* for this particular project to function. Additionally this project is **kept in sync** with the utilities library, so "jar hell" is not an issue, and the latest release will always include the same utility files as all other projects in the dorkbox repository at that time.
+  
+  Please note that the utility classes have their source code included in the release, and eventually the entire utility library will be provided as a dorkbox repository.
 ```
 <dependency>
   <groupId>com.dorkbox</groupId>
   <artifactId>Console</artifactId>
-  <version>3.0</version>
+  <version>3.1</version>
 </dependency>
 ```
 
 Or if you don't want to use Maven, you can access the files directly here:  
 https://oss.sonatype.org/content/repositories/releases/com/dorkbox/Console/  
-https://oss.sonatype.org/content/repositories/releases/com/dorkbox/Console-Dorkbox-Util/  
 
 https://oss.sonatype.org/content/repositories/releases/com/dorkbox/ObjectPool/  
   

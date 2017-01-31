@@ -7,7 +7,7 @@
        Daniel Doubrovkine
        Torbjorn Granlund
        David MacKenzie
-        Unbuffered input and ANSI output support for linux, mac, windows. Java 6+
+        Unbuffered input and ANSI output support for Linux, MacOS, or Windows for Java 6+
 
 
     - Dorkbox Utils - Apache 2.0 License
