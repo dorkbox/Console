@@ -39,9 +39,9 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 
 import dorkbox.console.Console;
-import dorkbox.console.util.posix.CLibraryPosix;
-import dorkbox.console.util.windows.Kernel32;
 import dorkbox.util.OS;
+import dorkbox.util.OSUtil;
+import dorkbox.util.jna.linux.CLibraryPosix;
 
 /**
  * Provides a fluent API for generating ANSI escape sequences and providing access to streams that support it.
@@ -943,7 +943,7 @@ class Ansi {
         if (!isXterm()) {
             if (OS.isWindows()) {
                 // check if windows10+ (which natively supports ANSI)
-                if (Kernel32.isWindows10OrGreater()) {
+                if (OSUtil.Windows.isWindows10_plus()) {
                     // Just wrap it up so that when we get closed, we reset the attributes.
                     return defaultPrintStream(stream, type);
                 }

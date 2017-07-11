@@ -11,25 +11,27 @@
  */
 package dorkbox.console.input;
 
-import static dorkbox.console.util.windows.Kernel32.ASSERT;
-import static dorkbox.console.util.windows.Kernel32.CloseHandle;
-import static dorkbox.console.util.windows.Kernel32.GetConsoleMode;
-import static dorkbox.console.util.windows.Kernel32.GetConsoleScreenBufferInfo;
-import static dorkbox.console.util.windows.Kernel32.GetStdHandle;
-import static dorkbox.console.util.windows.Kernel32.STD_INPUT_HANDLE;
-import static dorkbox.console.util.windows.Kernel32.STD_OUTPUT_HANDLE;
-import static dorkbox.console.util.windows.Kernel32.SetConsoleMode;
+
+import static com.sun.jna.platform.win32.WinBase.INVALID_HANDLE_VALUE;
+import static com.sun.jna.platform.win32.WinNT.HANDLE;
+import static com.sun.jna.platform.win32.Wincon.STD_INPUT_HANDLE;
+import static com.sun.jna.platform.win32.Wincon.STD_OUTPUT_HANDLE;
+import static dorkbox.util.jna.windows.Kernel32.ASSERT;
+import static dorkbox.util.jna.windows.Kernel32.CloseHandle;
+import static dorkbox.util.jna.windows.Kernel32.GetConsoleMode;
+import static dorkbox.util.jna.windows.Kernel32.GetConsoleScreenBufferInfo;
+import static dorkbox.util.jna.windows.Kernel32.GetStdHandle;
+import static dorkbox.util.jna.windows.Kernel32.ReadConsoleInput;
+import static dorkbox.util.jna.windows.Kernel32.SetConsoleMode;
 
 import java.io.IOException;
 import java.io.PrintStream;
 
 import com.sun.jna.ptr.IntByReference;
 
-import dorkbox.console.util.windows.CONSOLE_SCREEN_BUFFER_INFO;
-import dorkbox.console.util.windows.HANDLE;
-import dorkbox.console.util.windows.INPUT_RECORD;
-import dorkbox.console.util.windows.KEY_EVENT_RECORD;
-import dorkbox.console.util.windows.Kernel32;
+import dorkbox.util.jna.windows.structs.CONSOLE_SCREEN_BUFFER_INFO;
+import dorkbox.util.jna.windows.structs.INPUT_RECORD;
+import dorkbox.util.jna.windows.structs.KEY_EVENT_RECORD;
 
 /**
  * Terminal implementation for Microsoft Windows.
@@ -62,12 +64,12 @@ class WindowsTerminal extends SupportedTerminal {
     public
     WindowsTerminal() throws IOException {
         console = GetStdHandle(STD_INPUT_HANDLE);
-        if (console == HANDLE.INVALID_HANDLE_VALUE) {
+        if (console == INVALID_HANDLE_VALUE) {
             throw new IOException("Unable to get input console handle.");
         }
 
         outputConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        if (outputConsole == HANDLE.INVALID_HANDLE_VALUE) {
+        if (outputConsole == INVALID_HANDLE_VALUE) {
             throw new IOException("Unable to get output console handle.");
         }
 
@@ -162,7 +164,7 @@ class WindowsTerminal extends SupportedTerminal {
         // keep reading input events until we find one that we are interested in (ie: keyboard input)
         while (true) {
             // blocks until there is (at least) 1 event on the buffer
-            Kernel32.ReadConsoleInputW(console, inputRecords, 1, reference);
+            ReadConsoleInput(console, inputRecords, 1, reference);
 
             for (int i = 0; i < reference.getValue(); ++i) {
                 if (inputRecords.EventType == INPUT_RECORD.KEY_EVENT) {

@@ -20,8 +20,8 @@ import java.nio.ByteBuffer;
 
 import com.sun.jna.ptr.IntByReference;
 
-import dorkbox.console.util.posix.CLibraryPosix;
-import dorkbox.console.util.posix.Termios;
+import dorkbox.util.jna.linux.CLibraryPosix;
+import dorkbox.util.jna.linux.structs.Termios;
 
 /**
  * Terminal that is used for unix platforms. Terminal initialization is handled via JNA and ioctl/tcgetattr/tcsetattr/cfmakeraw.
@@ -42,12 +42,14 @@ class PosixTerminal extends SupportedTerminal {
         if (CLibraryPosix.tcgetattr(0, this.original) != 0) {
             throw new IOException(CONSOLE_ERROR_INIT);
         }
+        this.original.read();
 
         // CTRL-I (tab), CTRL-M (enter)  do not work
 
         if (CLibraryPosix.tcgetattr(0, this.termInfo) != 0) {
             throw new IOException(CONSOLE_ERROR_INIT);
         }
+        this.termInfo.read();
 
         this.termInfo.inputFlags &= ~Termios.Input.IXON;   // DISABLE - output flow control mediated by ^S and ^Q
         this.termInfo.inputFlags &= ~Termios.Input.IXOFF;  // DISABLE - input flow control mediated by ^S and ^Q

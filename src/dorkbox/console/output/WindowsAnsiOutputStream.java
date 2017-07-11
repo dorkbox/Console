@@ -31,23 +31,46 @@
  */
 package dorkbox.console.output;
 
-import static dorkbox.console.util.windows.Kernel32.ASSERT;
-import static dorkbox.console.util.windows.Kernel32.FillConsoleOutputAttribute;
-import static dorkbox.console.util.windows.Kernel32.FillConsoleOutputCharacterW;
-import static dorkbox.console.util.windows.Kernel32.GetConsoleScreenBufferInfo;
-import static dorkbox.console.util.windows.Kernel32.SetConsoleCursorPosition;
-import static dorkbox.console.util.windows.Kernel32.SetConsoleTextAttribute;
+import static com.sun.jna.platform.win32.WinBase.INVALID_HANDLE_VALUE;
+import static com.sun.jna.platform.win32.WinNT.HANDLE;
+import static com.sun.jna.platform.win32.Wincon.STD_ERROR_HANDLE;
+import static com.sun.jna.platform.win32.Wincon.STD_OUTPUT_HANDLE;
+import static dorkbox.util.jna.windows.Kernel32.ASSERT;
+import static dorkbox.util.jna.windows.Kernel32.BACKGROUND_BLACK;
+import static dorkbox.util.jna.windows.Kernel32.BACKGROUND_BLUE;
+import static dorkbox.util.jna.windows.Kernel32.BACKGROUND_CYAN;
+import static dorkbox.util.jna.windows.Kernel32.BACKGROUND_GREEN;
+import static dorkbox.util.jna.windows.Kernel32.BACKGROUND_GREY;
+import static dorkbox.util.jna.windows.Kernel32.BACKGROUND_INTENSITY;
+import static dorkbox.util.jna.windows.Kernel32.BACKGROUND_MAGENTA;
+import static dorkbox.util.jna.windows.Kernel32.BACKGROUND_RED;
+import static dorkbox.util.jna.windows.Kernel32.BACKGROUND_YELLOW;
+import static dorkbox.util.jna.windows.Kernel32.CloseHandle;
+import static dorkbox.util.jna.windows.Kernel32.FOREGROUND_BLACK;
+import static dorkbox.util.jna.windows.Kernel32.FOREGROUND_BLUE;
+import static dorkbox.util.jna.windows.Kernel32.FOREGROUND_CYAN;
+import static dorkbox.util.jna.windows.Kernel32.FOREGROUND_GREEN;
+import static dorkbox.util.jna.windows.Kernel32.FOREGROUND_GREY;
+import static dorkbox.util.jna.windows.Kernel32.FOREGROUND_INTENSITY;
+import static dorkbox.util.jna.windows.Kernel32.FOREGROUND_MAGENTA;
+import static dorkbox.util.jna.windows.Kernel32.FOREGROUND_RED;
+import static dorkbox.util.jna.windows.Kernel32.FOREGROUND_YELLOW;
+import static dorkbox.util.jna.windows.Kernel32.FillConsoleOutputAttribute;
+import static dorkbox.util.jna.windows.Kernel32.FillConsoleOutputCharacter;
+import static dorkbox.util.jna.windows.Kernel32.GetConsoleScreenBufferInfo;
+import static dorkbox.util.jna.windows.Kernel32.GetStdHandle;
+import static dorkbox.util.jna.windows.Kernel32.ScrollConsoleScreenBuffer;
+import static dorkbox.util.jna.windows.Kernel32.SetConsoleCursorPosition;
+import static dorkbox.util.jna.windows.Kernel32.SetConsoleTextAttribute;
 
 import java.io.IOException;
 import java.io.OutputStream;
 
 import com.sun.jna.ptr.IntByReference;
 
-import dorkbox.console.util.windows.CONSOLE_SCREEN_BUFFER_INFO;
-import dorkbox.console.util.windows.COORD;
-import dorkbox.console.util.windows.HANDLE;
-import dorkbox.console.util.windows.Kernel32;
-import dorkbox.console.util.windows.SMALL_RECT;
+import dorkbox.util.jna.windows.structs.CONSOLE_SCREEN_BUFFER_INFO;
+import dorkbox.util.jna.windows.structs.COORD;
+import dorkbox.util.jna.windows.structs.SMALL_RECT;
 
 /**
  * A Windows ANSI escape processor, uses JNA direct-mapping to access native platform API's to change the console attributes.
@@ -65,24 +88,24 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
 
     static {
         ANSI_FOREGROUND_COLOR_MAP = new short[8];
-        ANSI_FOREGROUND_COLOR_MAP[BLACK] = Kernel32.FOREGROUND_BLACK;
-        ANSI_FOREGROUND_COLOR_MAP[RED] = Kernel32.FOREGROUND_RED;
-        ANSI_FOREGROUND_COLOR_MAP[GREEN] = Kernel32.FOREGROUND_GREEN;
-        ANSI_FOREGROUND_COLOR_MAP[YELLOW] = Kernel32.FOREGROUND_YELLOW;
-        ANSI_FOREGROUND_COLOR_MAP[BLUE] = Kernel32.FOREGROUND_BLUE;
-        ANSI_FOREGROUND_COLOR_MAP[MAGENTA] = Kernel32.FOREGROUND_MAGENTA;
-        ANSI_FOREGROUND_COLOR_MAP[CYAN] = Kernel32.FOREGROUND_CYAN;
-        ANSI_FOREGROUND_COLOR_MAP[WHITE] = Kernel32.FOREGROUND_GREY;
+        ANSI_FOREGROUND_COLOR_MAP[BLACK] = FOREGROUND_BLACK;
+        ANSI_FOREGROUND_COLOR_MAP[RED] = FOREGROUND_RED;
+        ANSI_FOREGROUND_COLOR_MAP[GREEN] = FOREGROUND_GREEN;
+        ANSI_FOREGROUND_COLOR_MAP[YELLOW] = FOREGROUND_YELLOW;
+        ANSI_FOREGROUND_COLOR_MAP[BLUE] = FOREGROUND_BLUE;
+        ANSI_FOREGROUND_COLOR_MAP[MAGENTA] = FOREGROUND_MAGENTA;
+        ANSI_FOREGROUND_COLOR_MAP[CYAN] = FOREGROUND_CYAN;
+        ANSI_FOREGROUND_COLOR_MAP[WHITE] = FOREGROUND_GREY;
 
         ANSI_BACKGROUND_COLOR_MAP = new short[8];
-        ANSI_BACKGROUND_COLOR_MAP[BLACK] = Kernel32.BACKGROUND_BLACK;
-        ANSI_BACKGROUND_COLOR_MAP[RED] = Kernel32.BACKGROUND_RED;
-        ANSI_BACKGROUND_COLOR_MAP[GREEN] = Kernel32.BACKGROUND_GREEN;
-        ANSI_BACKGROUND_COLOR_MAP[YELLOW] = Kernel32.BACKGROUND_YELLOW;
-        ANSI_BACKGROUND_COLOR_MAP[BLUE] = Kernel32.BACKGROUND_BLUE;
-        ANSI_BACKGROUND_COLOR_MAP[MAGENTA] = Kernel32.BACKGROUND_MAGENTA;
-        ANSI_BACKGROUND_COLOR_MAP[CYAN] = Kernel32.BACKGROUND_CYAN;
-        ANSI_BACKGROUND_COLOR_MAP[WHITE] = Kernel32.BACKGROUND_GREY;
+        ANSI_BACKGROUND_COLOR_MAP[BLACK] = BACKGROUND_BLACK;
+        ANSI_BACKGROUND_COLOR_MAP[RED] = BACKGROUND_RED;
+        ANSI_BACKGROUND_COLOR_MAP[GREEN] = BACKGROUND_GREEN;
+        ANSI_BACKGROUND_COLOR_MAP[YELLOW] = BACKGROUND_YELLOW;
+        ANSI_BACKGROUND_COLOR_MAP[BLUE] = BACKGROUND_BLUE;
+        ANSI_BACKGROUND_COLOR_MAP[MAGENTA] = BACKGROUND_MAGENTA;
+        ANSI_BACKGROUND_COLOR_MAP[CYAN] = BACKGROUND_CYAN;
+        ANSI_BACKGROUND_COLOR_MAP[WHITE] = BACKGROUND_GREY;
     }
 
     private final HANDLE console;
@@ -96,20 +119,19 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
     // reused vars
     private IntByReference written = new IntByReference();
 
-    public
     WindowsAnsiOutputStream(final OutputStream os, int fileHandle) throws IOException {
         super(os);
 
         if (fileHandle == 1) { // STDOUT_FILENO
-            fileHandle = Kernel32.STD_OUTPUT_HANDLE;
+            fileHandle = STD_OUTPUT_HANDLE;
         } else if (fileHandle == 2) { // STDERR_FILENO
-            fileHandle = Kernel32.STD_ERROR_HANDLE;
+            fileHandle = STD_ERROR_HANDLE;
         } else {
             throw new IllegalArgumentException("Invalid file handle " + fileHandle);
         }
 
-        console = Kernel32.GetStdHandle(fileHandle);
-        if (console == HANDLE.INVALID_HANDLE_VALUE) {
+        console = GetStdHandle(fileHandle);
+        if (console == INVALID_HANDLE_VALUE) {
             throw new IOException("Unable to get input console handle.");
         }
 
@@ -180,7 +202,7 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
                 int screenLength = info.window.height() * info.size.x;
 
                 ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, screenLength, topLeft.asValue(), written), "Could not fill console");
-                ASSERT(FillConsoleOutputCharacterW(console, ' ', screenLength, topLeft.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputCharacter(console, ' ', screenLength, topLeft.asValue(), written), "Could not fill console");
                 break;
             case ERASE_TO_BEGINNING:
                 COORD topLeft2 = new COORD();
@@ -189,13 +211,13 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
                 int lengthToCursor = (info.cursorPosition.y - info.window.top) * info.size.x + info.cursorPosition.x;
 
                 ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, lengthToCursor, topLeft2.asValue(), written), "Could not fill console");
-                ASSERT(FillConsoleOutputCharacterW(console, ' ', lengthToCursor, topLeft2.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputCharacter(console, ' ', lengthToCursor, topLeft2.asValue(), written), "Could not fill console");
                 break;
             case ERASE_TO_END:
                 int lengthToEnd = (info.window.bottom - info.cursorPosition.y) * info.size.x + info.size.x - info.cursorPosition.x;
 
                 ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, lengthToEnd, info.cursorPosition.asValue(), written), "Could not fill console");
-                ASSERT(FillConsoleOutputCharacterW(console, ' ', lengthToEnd, info.cursorPosition.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputCharacter(console, ' ', lengthToEnd, info.cursorPosition.asValue(), written), "Could not fill console");
         }
     }
 
@@ -210,20 +232,20 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
                 currentRow.x = (short) 0;
 
                 ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, info.size.x, currentRow.asValue(), written), "Could not fill console");
-                ASSERT(FillConsoleOutputCharacterW(console, ' ', info.size.x, currentRow.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputCharacter(console, ' ', info.size.x, currentRow.asValue(), written), "Could not fill console");
                 break;
             case ERASE_TO_BEGINNING:
                 COORD leftColCurrRow2 = info.cursorPosition.asValue();
                 leftColCurrRow2.x = (short) 0;
 
                 ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, info.cursorPosition.x, leftColCurrRow2.asValue(), written), "Could not fill console");
-                ASSERT(FillConsoleOutputCharacterW(console, ' ', info.cursorPosition.x, leftColCurrRow2.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputCharacter(console, ' ', info.cursorPosition.x, leftColCurrRow2.asValue(), written), "Could not fill console");
                 break;
             case ERASE_TO_END:
                 int lengthToLastCol = info.size.x - info.cursorPosition.x;
 
                 ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, lengthToLastCol, info.cursorPosition.asValue(), written), "Could not fill console");
-                ASSERT(FillConsoleOutputCharacterW(console, ' ', lengthToLastCol, info.cursorPosition.asValue(), written), "Could not fill console");
+                ASSERT(FillConsoleOutputCharacter(console, ' ', lengthToLastCol, info.cursorPosition.asValue(), written), "Could not fill console");
         }
     }
 
@@ -233,34 +255,34 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
         if (90 <= attribute && attribute <= 97) {
             // foreground bright
             info.attributes = (short) (info.attributes & ~0x000F | ANSI_FOREGROUND_COLOR_MAP[attribute - 90]);
-            info.attributes = (short) (info.attributes | Kernel32.FOREGROUND_INTENSITY);
+            info.attributes = (short) (info.attributes | FOREGROUND_INTENSITY);
             applyAttributes();
             return;
         } else if (100 <= attribute && attribute <= 107) {
             // background bright
             info.attributes = (short) (info.attributes & ~0x00F0 | ANSI_BACKGROUND_COLOR_MAP[attribute - 100]);
-            info.attributes = (short) (info.attributes | Kernel32.BACKGROUND_INTENSITY);
+            info.attributes = (short) (info.attributes | BACKGROUND_INTENSITY);
             applyAttributes();
             return;
         }
 
         switch (attribute) {
             case ATTRIBUTE_BOLD:
-                info.attributes = (short) (info.attributes | Kernel32.FOREGROUND_INTENSITY);
+                info.attributes = (short) (info.attributes | FOREGROUND_INTENSITY);
                 applyAttributes();
                 break;
             case ATTRIBUTE_NORMAL:
-                info.attributes = (short) (info.attributes & ~Kernel32.FOREGROUND_INTENSITY);
+                info.attributes = (short) (info.attributes & ~FOREGROUND_INTENSITY);
                 applyAttributes();
                 break;
 
             // Yeah, setting the background intensity is not underlining.. but it's best we can do using the Windows console API
             case ATTRIBUTE_UNDERLINE:
-                info.attributes = (short) (info.attributes | Kernel32.BACKGROUND_INTENSITY);
+                info.attributes = (short) (info.attributes | BACKGROUND_INTENSITY);
                 applyAttributes();
                 break;
             case ATTRIBUTE_UNDERLINE_OFF:
-                info.attributes = (short) (info.attributes & ~Kernel32.BACKGROUND_INTENSITY);
+                info.attributes = (short) (info.attributes & ~BACKGROUND_INTENSITY);
                 applyAttributes();
                 break;
 
@@ -324,6 +346,7 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
         scroll((short) count);
     }
 
+    @Override
     protected
     void processCursorUpLine(final int count) throws IOException {
         getConsoleInfo();
@@ -332,6 +355,7 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
         applyCursorPosition();
     }
 
+    @Override
     protected
     void processCursorDownLine(final int count) throws IOException {
         getConsoleInfo();
@@ -401,6 +425,7 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
      *                     and show THAT instead of blank lines. If the content is moved enough so that it runs OFF the
      *                     buffer, blank lines will be shown.
      */
+    @SuppressWarnings("RedundantCast")
     private void scroll(short rowsToScroll) throws IOException {
         if (rowsToScroll == 0) {
             return;
@@ -427,7 +452,7 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
         attribs.setValue(info.attributes);
 
         // The clipping rectangle is the same as the scrolling rectangle, so we pass NULL
-        ASSERT(Kernel32.ScrollConsoleScreenBufferW(console, scrollRect, null, coordDest, attribs), "Could not scroll console");
+        ASSERT(ScrollConsoleScreenBuffer(console, scrollRect, null, coordDest, attribs), "Could not scroll console");
     }
 
     @Override
@@ -435,7 +460,7 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
         super.close();
 
         if (console != null) {
-            Kernel32.CloseHandle(console);
+            CloseHandle(console);
         }
     }
 }

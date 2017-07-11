@@ -32,6 +32,7 @@
     <orderEntry type="module" module-name="ObjectPool" />
     <orderEntry type="library" name="logging slf4j-api" level="application" />
     <orderEntry type="library" name="jna" level="application" />
+    <orderEntry type="library" name="jna platform" level="application" />
     <orderEntry type="library" name="junit-4.12" level="application" />
   </component>
 </module>
