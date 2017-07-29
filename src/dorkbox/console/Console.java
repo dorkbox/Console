@@ -87,7 +87,7 @@ class Console {
      */
     public static
     Version getVersion() {
-        return new Version("3.2");
+        return new Version("3.3");
     }
 
 
