@@ -24,7 +24,6 @@ import dorkbox.console.input.Terminal;
 import dorkbox.console.output.Ansi;
 import dorkbox.console.output.AnsiOutputStream;
 import dorkbox.util.Property;
-import dorkbox.util.Version;
 
 /**
  * Provides access to single character input streams and ANSI capable output streams.
@@ -86,10 +85,9 @@ class Console {
      * Gets the version number.
      */
     public static
-    Version getVersion() {
-        return new Version("3.3");
+    String getVersion() {
+        return "3.4";
     }
-
 
     /**
      * Initializes output streams, necessary when using ANSI for the first time inside of an output stream (as it initializes after
