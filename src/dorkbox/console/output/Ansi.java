@@ -789,11 +789,14 @@ class Ansi {
     }
 
     /**
-     * Appends a StringBuffer
+     * Appends a StringBuffer.
+     * </p>
+     * You should be using a StringBuilder instead.
      *
      * @param value value to be appended to the ANSI stream
      * @return this
      */
+    @Deprecated
     public
     Ansi a(final StringBuffer value) {
         flushAttributes();
