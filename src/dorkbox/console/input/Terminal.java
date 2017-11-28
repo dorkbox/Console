@@ -22,7 +22,7 @@ import dorkbox.console.Console;
 @SuppressWarnings("unused")
 public abstract
 class Terminal {
-
+    static final char[] EMPTY_LINE = new char[0];
     static final String CONSOLE_ERROR_INIT = "Unable to initialize the input console.";
 
     static final int DEFAULT_WIDTH = 80;

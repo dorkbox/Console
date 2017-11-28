@@ -31,8 +31,6 @@ public abstract
 class SupportedTerminal extends Terminal implements Runnable {
     private final PrintStream out = System.out;
 
-    private static final char[] emptyLine = new char[0];
-
     protected final Object inputLockLine = new Object();
     protected final Object inputLockSingle = new Object();
 
@@ -63,6 +61,7 @@ class SupportedTerminal extends Terminal implements Runnable {
      *
      * @return -1 if no data or problems
      */
+    @Override
     public final
     int read() {
         CharHolder holder = charInput.get();
@@ -91,6 +90,7 @@ class SupportedTerminal extends Terminal implements Runnable {
      *
      * @return empty char[] if no data
      */
+    @Override
     public final
     char[] readLineChars() {
         ByteBuffer2 buffer = lineInput.get();
@@ -103,12 +103,12 @@ class SupportedTerminal extends Terminal implements Runnable {
             try {
                 inputLockLine.wait();
             } catch (InterruptedException e) {
-                return emptyLine;
+                return EMPTY_LINE;
             }
 
             int len = buffer.position();
             if (len == 0) {
-                return emptyLine;
+                return EMPTY_LINE;
             }
 
             buffer.rewind();
@@ -127,6 +127,7 @@ class SupportedTerminal extends Terminal implements Runnable {
     /**
      * releases any thread still waiting.
      */
+    @Override
     public final
     void close() {
         synchronized (inputLockSingle) {
@@ -143,6 +144,7 @@ class SupportedTerminal extends Terminal implements Runnable {
      */
     protected abstract int doRead();
 
+    @Override
     public
     void run() {
         final Logger logger2 = logger;
