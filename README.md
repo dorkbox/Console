@@ -15,6 +15,7 @@ This library is a optimized combination of [JLine](https://github.com/jline/jlin
  1. Controls `ECHO` on/off in the console
  1. Controls `Ctrl-C` (SIGINT) on/off in the console
  1. Multi-threaded, intelligent buffering of command input for simultaneous input readers on different threads
+ 1. Solves un-interruptable blocking reads from System.in when in an "unsupported" terminal (ie: anything other than a *nix/windows shell) so one can successfully stop reading from the input stream,
   
   
 - This is for cross-platform use, specifically - linux arm/32/64, mac 32/64, and windows 32/64. Java 6+
@@ -88,7 +89,7 @@ Maven Info
     <dependency>
       <groupId>com.dorkbox</groupId>
       <artifactId>Console</artifactId>
-      <version>3.4</version>
+      <version>3.5</version>
     </dependency>
 </dependencies>
 ```
