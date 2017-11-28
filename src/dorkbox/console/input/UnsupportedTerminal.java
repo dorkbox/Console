@@ -15,8 +15,9 @@
  */
 package dorkbox.console.input;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import dorkbox.util.FastThreadLocal;
 import dorkbox.util.bytes.ByteBuffer2;
@@ -25,10 +26,49 @@ import dorkbox.util.bytes.ByteBuffer2;
 public
 class UnsupportedTerminal extends Terminal {
 
-    private static final char[] newLine;
+
+    private static final char[] NEW_LINE;
+    private static final Thread backgroundReaderThread;
+
+    private static final Object lock = new Object[0];
+    private static String currentConsoleInput = null;
+
+
+
     static {
-        newLine = new char[1];
-        newLine[0] = '\n';
+        NEW_LINE = new char[1];
+        NEW_LINE[0] = '\n';
+
+        // this adopts a different thread + locking to enable reader threads to "unblock" after the blocking read.
+        // http://bugs.java.com/bugdatabase/view_bug.do?bug_id=4514257
+        // https://community.oracle.com/message/5318833#5318833
+        backgroundReaderThread = new Thread(new Runnable() {
+            @Override
+            public
+            void run() {
+                final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+                try {
+                    while (!Thread.interrupted()) {
+                        currentConsoleInput = null;
+
+                        String line = reader.readLine();
+                        if (line == null) {
+                            break;
+                        }
+
+                        synchronized (lock) {
+                            currentConsoleInput = line;
+                            lock.notifyAll();
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        backgroundReaderThread.setDaemon(true);
+        backgroundReaderThread.start();
     }
 
     private final FastThreadLocal<ByteBuffer2> buffer = new FastThreadLocal<ByteBuffer2>() {
@@ -79,51 +119,46 @@ class UnsupportedTerminal extends Terminal {
     }
 
     /**
-     * Reads single character input from the console.
+     * Reads single character input from the console. This is "faked" by reading a line
      *
      * @return -1 if no data or problems
      */
+    @Override
     public
     int read() {
+        int position;
         // so, 'readCount' is REALLY the index at which we return letters (until the whole string is returned)
         ByteBuffer2 buffer = this.buffer.get();
+        buffer.clearSecure();
+
+        // we have to wait for more data.
         if (this.readCount.get() == 0) {
-            // we have to wait for more data.
-            try {
-                InputStream sysIn = System.in;
-                int read;
-                char asChar;
-                buffer.clearSecure();
-
-                while ((read = sysIn.read()) != -1) {
-                    asChar = (char) read;
-                    if (asChar == '\n') {
-                        int position = buffer.position();
-                        this.readCount.set(position);
-                        if (position == 0) {
-                            // only send a NEW LINE if it was the ONLY thing pressed (this is to MOST ACCURATELY simulate single char input
-                            return '\n';
-                        }
-
-                        buffer.rewind();
-                        break;
-                    }
-                    else {
-                        buffer.writeChar(asChar);
-                    }
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException ignored) {
                 }
-            } catch (IOException ignored) {
             }
+
+            if (currentConsoleInput == null) {
+                return -1;
+            }
+
+
+            char[] chars = currentConsoleInput.toCharArray();
+            buffer.writeChars(chars);
+            position = buffer.position();
+            buffer.rewind();
+
+            this.readCount.set(position);
+            if (position == 0) {
+                // only send a NEW LINE if it was the ONLY thing pressed (this is to MOST ACCURATELY simulate single char input
+                return '\n';
+            }
+
+            buffer.rewind();
         }
 
-//        // EACH thread will have it's own count!
-//        if (this.readCount == buffer.position()) {
-//            this.readCount = -1;
-//            return '\n';
-//        }
-//        else {
-//            return buffer.readChar();
-//        }
         readCount.set(this.readCount.get() - 2); // 2 bytes per char in the stream
         return buffer.readChar();
     }
@@ -133,38 +168,29 @@ class UnsupportedTerminal extends Terminal {
      *
      * @return empty char[] if no data
      */
+    @Override
     public
     char[] readLineChars() {
-        ByteBuffer2 buffer = this.buffer.get();
-        buffer.clearSecure();
-
-        int position = 0;
         // we have to wait for more data.
-        try {
-            final InputStream sysIn = System.in;
-            int read;
-            char asChar;
-
-            while ((read = sysIn.read()) != -1) {
-                asChar = (char) read;
-
-                if (asChar == '\n') {
-                    buffer.rewind();
-                    break;
-                }
-                buffer.writeChar(asChar);
-                position = buffer.position();
+        synchronized (lock) {
+            try {
+                lock.wait();
+            } catch (InterruptedException ignored) {
             }
-        } catch (IOException ignored) {
         }
 
-        if (position == 0) {
+        if (currentConsoleInput == null) {
+            return EMPTY_LINE;
+        }
+
+
+        char[] chars = currentConsoleInput.toCharArray();
+        int length = chars.length;
+
+        if (length == 0) {
             // only send a NEW LINE if it was the ONLY thing pressed (this is to MOST ACCURATELY simulate single char input
-            return newLine;
+            return NEW_LINE;
         }
-
-        char[] chars = buffer.readChars(position/2); // 2 bytes per char
-        buffer.clearSecure();
 
         return chars;
     }
@@ -172,5 +198,8 @@ class UnsupportedTerminal extends Terminal {
     @Override
     public
     void close() {
+        synchronized (lock) {
+            lock.notifyAll();
+        }
     }
 }
