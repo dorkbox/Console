@@ -26,7 +26,8 @@ class AnsiConsoleExample {
         Console.ENABLE_ANSI = true;
         Console.ENABLE_ECHO = true;
 
-        Console.init();
+        // needed to hook the output streams, so "normal" System.out/err work (rather than having to use Console.err/out
+        Console.hookSystemOutputStreams();
 
         System.err.println("System Properties");
         Properties properties = System.getProperties();
@@ -71,28 +72,28 @@ class AnsiConsoleExample {
                                .reset());
 
         System.out.println(Ansi.ansi()
-                                   .fg(Color.MAGENTA).a("magenta").bg(Color.MAGENTA).a("magenta")
-                                   .reset()
-                                   .fg(Color.BRIGHT_MAGENTA).a("b-magenta").bg(Color.BRIGHT_MAGENTA).a("b-magenta")
-                                   .reset());
+                               .fg(Color.MAGENTA).a("magenta").bg(Color.MAGENTA).a("magenta")
+                               .reset()
+                               .fg(Color.BRIGHT_MAGENTA).a("b-magenta").bg(Color.BRIGHT_MAGENTA).a("b-magenta")
+                               .reset());
 
         System.out.println(Ansi.ansi()
-                                   .fg(Color.RED).a("red").bg(Color.RED).a("red")
-                                   .reset()
-                                   .fg(Color.BRIGHT_RED).a("b-red").bg(Color.BRIGHT_RED).a("b-red")
-                                   .reset());
+                               .fg(Color.RED).a("red").bg(Color.RED).a("red")
+                               .reset()
+                               .fg(Color.BRIGHT_RED).a("b-red").bg(Color.BRIGHT_RED).a("b-red")
+                               .reset());
 
         System.out.println(Ansi.ansi()
-                                   .fg(Color.YELLOW).a("yellow").bg(Color.YELLOW).a("yellow")
-                                   .reset()
-                                   .fg(Color.BRIGHT_YELLOW).a("b-yellow").bg(Color.BRIGHT_YELLOW).a("b-yellow")
-                                   .reset());
+                               .fg(Color.YELLOW).a("yellow").bg(Color.YELLOW).a("yellow")
+                               .reset()
+                               .fg(Color.BRIGHT_YELLOW).a("b-yellow").bg(Color.BRIGHT_YELLOW).a("b-yellow")
+                               .reset());
 
         System.out.println(Ansi.ansi()
-                                   .fg(Color.WHITE).a("white").bg(Color.WHITE).a("white")
-                                   .reset()
-                                   .fg(Color.BRIGHT_WHITE).a("b-white").bg(Color.BRIGHT_WHITE).a("b-white")
-                                   .reset());
+                               .fg(Color.WHITE).a("white").bg(Color.WHITE).a("white")
+                               .reset()
+                               .fg(Color.BRIGHT_WHITE).a("b-white").bg(Color.BRIGHT_WHITE).a("b-white")
+                               .reset());
 
 
         Console.reset(); // reset the ansi stream. Can ALSO have ansi().reset(), but that would be redundant
@@ -106,20 +107,20 @@ class AnsiConsoleExample {
 
         System.out.println("The following line should be blank");
         System.out.println(Ansi.ansi()
-                                   .a(">THIS SHOULD BE BLANK")
-                                   .eraseLine(Erase.ALL));
+                               .a(">THIS SHOULD BE BLANK")
+                               .eraseLine(Erase.ALL));
 
         System.out.println(Ansi.ansi()
-                                   .a(">THIS SHOULD BE BLANK")
-                                   .eraseLine(Erase.BACKWARD)
-                                   .a("Everything on this line before this should be blank"));
+                               .a(">THIS SHOULD BE BLANK")
+                               .eraseLine(Erase.BACKWARD)
+                               .a("Everything on this line before this should be blank"));
 
         System.out.println(Ansi.ansi()
-                                   .a("Everything on this line after this should be blank")
-                                   .saveCursorPosition()
-                                   .a(">THIS SHOULD BE BLANK")
-                                   .restoreCursorPosition()
-                                   .eraseLine());
+                               .a("Everything on this line after this should be blank")
+                               .saveCursorPosition()
+                               .a(">THIS SHOULD BE BLANK")
+                               .restoreCursorPosition()
+                               .eraseLine());
 
         System.out.println("00000000000000000000000000");
         System.out.println("00000000000000000000000000");
@@ -128,15 +129,15 @@ class AnsiConsoleExample {
         System.out.println("00000000000000000000000000");
 
         System.out.println(Ansi.ansi()
-                                   .a("Should have two blank spots in the above 0's")
-                                   .saveCursorPosition()
-                                   .cursorUp(4)
-                                   .cursorLeft(30)
-                                   .a("   ")
-                                   .cursorDownLine()
-                                   .cursorRight(5)
-                                   .a("   ")
-                                   .restoreCursorPosition());
+                               .a("Should have two blank spots in the above 0's")
+                               .saveCursorPosition()
+                               .cursorUp(4)
+                               .cursorLeft(30)
+                               .a("   ")
+                               .cursorDownLine()
+                               .cursorRight(5)
+                               .a("   ")
+                               .restoreCursorPosition());
 
         System.out.println("ver : " + Console.getVersion());
 

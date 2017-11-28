@@ -67,8 +67,6 @@ class Console {
     @Property
     public final static boolean ENABLE_BACKSPACE = true;
 
-
-
     /**
      * Used to determine what console to use/hook when AUTO is not correctly working.
      * Valid options are:
@@ -87,16 +85,6 @@ class Console {
     public static
     String getVersion() {
         return "3.4";
-    }
-
-    /**
-     * Initializes output streams, necessary when using ANSI for the first time inside of an output stream (as it initializes after
-     * assignment). This is not needed for input streams, since they do not hook System.err/out.
-     */
-    public static
-    void init() {
-        err();
-        out();
     }
 
     /**
@@ -119,6 +107,18 @@ class Console {
     public static
     InputStream inputStream() {
         return Input.wrappedInputStream;
+    }
+
+    /**
+     * Initializes and hooks output streams, necessary when using ANSI for the first time inside of an output stream (as it initializes
+     * after assignment).
+     * <p>
+     * This is not needed for input streams, since they do not hook System.err/out.
+     */
+    public static
+    void hookSystemOutputStreams() {
+        out();
+        err();
     }
 
     /**
@@ -147,10 +147,11 @@ class Console {
      * If we are installed to the system (IE: System.err/out, then reset those streams, otherwise there is nothing to do from a static
      * perspective (since creating a NEW ANSI stream will automatically reset the output
      */
-    public static synchronized
+    public static
     void reset() {
         try {
             Ansi.out.write(AnsiOutputStream.RESET_CODE);
+            Ansi.err.write(AnsiOutputStream.RESET_CODE);
         } catch (IOException e) {
             e.printStackTrace();
         }
