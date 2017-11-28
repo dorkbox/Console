@@ -97,8 +97,6 @@ Maven Info
 Or if you don't want to use Maven, you can access the files directly here:  
 https://oss.sonatype.org/content/repositories/releases/com/dorkbox/Console/  
 
-https://oss.sonatype.org/content/repositories/releases/com/dorkbox/ObjectPool/  
-  
 
 https://repo1.maven.org/maven2/net/java/dev/jna/jna/  
 https://repo1.maven.org/maven2/net/java/dev/jna/jna-platform/  
