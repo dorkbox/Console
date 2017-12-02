@@ -40,7 +40,6 @@ import java.util.ArrayList;
 
 import dorkbox.console.Console;
 import dorkbox.util.OS;
-import dorkbox.util.OSUtil;
 import dorkbox.util.jna.linux.CLibraryPosix;
 
 /**
@@ -946,7 +945,7 @@ class Ansi {
         if (!isXterm()) {
             if (OS.isWindows()) {
                 // check if windows10+ (which natively supports ANSI)
-                if (OSUtil.Windows.isWindows10_plus()) {
+                if (System.getProperty("os.version").startsWith("10.")) {
                     // Just wrap it up so that when we get closed, we reset the attributes.
                     return defaultPrintStream(stream, type);
                 }
