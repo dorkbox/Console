@@ -27,7 +27,7 @@
       <excludeFolder url="file://$MODULE_DIR$/libs" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="jdk" jdkName="1.6" jdkType="JavaSDK" />
+    <orderEntry type="jdk" jdkName="1.8" jdkType="JavaSDK" />
     <orderEntry type="module" module-name="Utilities" />
     <orderEntry type="library" name="logging slf4j-api" level="application" />
     <orderEntry type="library" name="jna" level="application" />
