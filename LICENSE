@@ -1,39 +1,41 @@
-    - Dorkbox Console - Apache 2.0 License
-      https://github.com/dorkbox
-      Copyright 2010, dorkbox, llc
-       Joris Kuipers
-       Jason Dillon
-       Hiram Chirino
-       Daniel Doubrovkine
-       Torbjorn Granlund
-       David MacKenzie
-        Unbuffered input and ANSI output support for Linux, MacOS, or Windows for Java 6+
+ - Console - 
+   https://git.dorkbox.com/dorkbox/Console
+   Copyright 2018 - The Apache Software License, Version 2.0
+     dorkbox, llc
+   Unbuffered input and ANSI output support for Linux, MacOS, or Windows for Java 6+
 
 
-    - Dorkbox Utils - Apache 2.0 License
-      https://github.com/dorkbox
-      Copyright 2010, dorkbox, llc
+ - Dorkbox Utils - 
+   https://git.dorkbox.com/dorkbox/Utilities
+   Copyright 2018 - The Apache Software License, Version 2.0
+     dorkbox, llc
 
 
-    - JAnsi - Apache 2.0 License
-      https://github.com/fusesource/jansi
-      Copyright 2009, Progress Software Corporation
-       Joris Kuipers
-       Jason Dillon
-       Hiram Chirino
+ - JAnsi - 
+   https://github.com/fusesource/jansi
+   Copyright 2009 - The Apache Software License, Version 2.0
+     Progress Software Corporation
+     Joris Kuipers
+     Jason Dillon
+     Hiram Chirino
 
 
-    - JLine2 - BSD 2-clause License
-      https://github.com/jline/jline2
-      Copyright 2002-2006, Marc Prud'hommeaux <mwp1@cornell.edu>
-      Copyright 2002-2012, the original author or authors
+ - JLine2 - 
+   https://github.com/jline/jline2
+   Copyright 2012 - BSD 2-Clause "Simplified" or "FreeBSD" license
+     Marc Prud'hommeaux <mwp1@cornell.edu>
+     Daniel Doubrovkine
+     Torbjorn Granlund
+     David MacKenzie
 
 
-    - JNA - Apache 2.0 License
-      https://github.com/twall/jna
-      Copyright 2011, Timothy Wall
+ - JNA - 
+   https://github.com/twall/jna
+   Copyright 2011 - The Apache Software License, Version 2.0
+     Timothy Wall
 
 
-    - SLF4J - MIT License
-      http://www.slf4j.org
-      Copyright 2004-2008, QOS.ch
+ - SLF4J - 
+   http://www.slf4j.org
+   Copyright 2008 - MIT License
+     QOS.ch
