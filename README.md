@@ -21,10 +21,10 @@ This library is a optimized combination of [JLine](https://github.com/jline/jlin
 - This is for cross-platform use, specifically - linux arm/32/64, mac 32/64, and windows 32/64. Java 6+
   
 Windows  
-![Windows](https://raw.githubusercontent.com/dorkbox/Console/master/windows%20console.png)  
+![Windows](https://git.dorkbox.com/dorkbox/Console/raw/branch/master/windows%20console.png)  
 
 Linux/Mac  
-![*nix](https://raw.githubusercontent.com/dorkbox/Console/master/linux%20console.png)  
+![*nix](https://git.dorkbox.com/dorkbox/Console/raw/branch/master/linux%20console.png)  
 
   
 ```
@@ -78,7 +78,7 @@ Release Notes
 
 This project includes some utility classes that are a small subset of a much larger library. These classes are **kept in sync** with the main utilities library, so "jar hell" is not an issue, and the latest release will always include the same version of utility files as all of the other projects in the dorkbox repository at that time. 
   
-  Please note that the utility source code is included in the release and on our [GitHub](https://github.com/dorkbox/Utilities) repository.
+  Please note that the utility source code is included in the release and on our [Git Server](https://git.dorkbox.com/dorkbox/Utilities) repository.
   
   
 Maven Info
@@ -94,8 +94,17 @@ Maven Info
 </dependencies>
 ```
 
+Gradle Info
+---------
+````
+dependencies {
+    ...
+    compile 'com.dorkbox:Console:3.6'
+}
+````
+
 Or if you don't want to use Maven, you can access the files directly here:  
-https://oss.sonatype.org/content/repositories/releases/com/dorkbox/Console/  
+https://repo1.maven.org/maven2/com/dorkbox/Console/  
 
 https://repo1.maven.org/maven2/net/java/dev/jna/jna/  
 https://repo1.maven.org/maven2/net/java/dev/jna/jna-platform/  
