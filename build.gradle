@@ -19,13 +19,17 @@ import java.time.Instant
 
 buildscript {
     // load properties from custom location
-    def propsFile = Paths.get("${projectDir}/../../gradle.properties").normalize()
-    if (propsFile.toFile().canRead()) {
+    def propsFile = Paths.get("${projectDir}/../../gradle.properties").normalize().toFile()
+    if (propsFile.canRead()) {
         println("Loading custom property data from: ${propsFile}")
 
         def props = new Properties()
         propsFile.withInputStream {props.load(it)}
         props.each {key, val -> project.ext.set(key, val)}
+    }
+    else {
+        ext.sonatypeUsername = ""
+        ext.sonatypePassword = ""
     }
 
     // for plugin publishing and license sources
@@ -61,6 +65,8 @@ apply plugin: "com.dorkbox.Licensing"
 // give us access to api/implementation differences for building java libraries
 apply plugin: 'java-library'
 
+// Utilities project shared configuration
+apply from: '../Utilities/scripts/gradle/utilities.gradle'
 
 project.description = 'Unbuffered input and ANSI output support for Linux, MacOS, or Windows for Java 6+'
 project.group = 'com.dorkbox'
@@ -118,11 +124,42 @@ licensing {
 }
 
 sourceSets {
+    utilities {
+        java {
+            setSrcDirs Collections.singletonList('../Utilities/src')
+
+            include javaFile('dorkbox.util.OS',
+                             'dorkbox.util.OSType',
+                             'dorkbox.util.Property',
+                             'dorkbox.util.FastThreadLocal',
+                             'dorkbox.util.bytes.ByteBuffer2',
+
+                             'dorkbox.util.jna.JnaHelper',
+                             'dorkbox.util.jna.windows.Kernel32',
+                             'dorkbox.util.jna.windows.structs.CONSOLE_SCREEN_BUFFER_INFO',
+                             'dorkbox.util.jna.windows.structs.INPUT_RECORD',
+                             'dorkbox.util.jna.windows.structs.SMALL_RECT',
+                             'dorkbox.util.jna.windows.structs.COORD',
+                             'dorkbox.util.jna.windows.structs.MOUSE_EVENT_RECORD',
+                             'dorkbox.util.jna.windows.structs.KEY_EVENT_RECORD',
+                             'dorkbox.util.jna.windows.structs.CharUnion',
+
+                             'dorkbox.util.jna.linux.CLibraryPosix',
+                             'dorkbox.util.jna.linux.structs.Termios')
+        }
+    }
+
     main {
         java {
             setSrcDirs Collections.singletonList('src')
+
+            srcDir utilities.java
         }
     }
+}
+
+project.afterEvaluate {
+    sourceSets.remove(sourceSets.utilities)
 }
 
 
@@ -133,34 +170,13 @@ repositories {
 
 
 dependencies {
-    implementation(project('Utilities')) {
-        // don't include any of the project dependencies for anything
-        transitive = false
-    }
-
-    // our main dependencies are ALSO the same as the limited utilities (they are not automatically pulled in from other sourceSets)
-    // needed by the utilities (custom since we don't want to include everything). IntelliJ includes everything, but our builds do not
+    // utilities dependencies compile only (this is so the IDE can compile the util source)
+    compileOnly project.ext['utilities']
 
     api 'net.java.dev.jna:jna:4.5.2'
     api 'net.java.dev.jna:jna-platform:4.5.2'
 
     api 'org.slf4j:slf4j-api:1.7.25'
-}
-
-
-project('Utilities') {
-    tasks.withType(Test) {
-        // want to remove utilities project from unit tests. It's unnecessary to run unit tests for the entire Utilities project
-        exclude('**/*')
-    }
-
-    tasks.withType(JavaCompile) {
-        options.encoding = 'UTF-8'
-        options.incremental = true
-
-        // setup compile options. we specifically want to suppress usage of "Unsafe"
-        options.compilerArgs = ['-XDignore.symbol.file', '-Xlint:deprecation']
-    }
 }
 
 ///////////////////////////////
@@ -187,49 +203,13 @@ static String[] javaFile(String... fileNames) {
 
     for (name in fileNames) {
         def fixed = name.replace('.', '/') + '.java'
-        fileList.add(fixed)
+        fileList.add('../Utilities/src/' + fixed)
     }
+
 
     return fileList
 }
 
-task compileUtils(type: JavaCompile) {
-    // we don't want the default include of **/*.java
-    getIncludes().clear()
-
-    source = Collections.singletonList('../Utilities/src')
-    include javaFile('dorkbox.util.OS',
-                     'dorkbox.util.OSType',
-                     'dorkbox.util.Property',
-                     'dorkbox.util.FastThreadLocal',
-                     'dorkbox.util.bytes.ByteBuffer2',
-
-                     'dorkbox.util.jna.JnaHelper',
-                     'dorkbox.util.jna.windows.Kernel32',
-                     'dorkbox.util.jna.windows.structs.CONSOLE_SCREEN_BUFFER_INFO',
-                     'dorkbox.util.jna.windows.structs.INPUT_RECORD',
-                     'dorkbox.util.jna.windows.structs.SMALL_RECT',
-                     'dorkbox.util.jna.windows.structs.COORD',
-                     'dorkbox.util.jna.windows.structs.MOUSE_EVENT_RECORD',
-                     'dorkbox.util.jna.windows.structs.KEY_EVENT_RECORD',
-                     'dorkbox.util.jna.windows.structs.CharUnion',
-
-                     'dorkbox.util.jna.linux.CLibraryPosix',
-                     'dorkbox.util.jna.linux.structs.Termios')
-
-    classpath = sourceSets.main.compileClasspath
-    destinationDir = file("$rootDir/build/classes_utilities")
-}
-
-///////////////////////////////
-//////    Jar Tasks
-///////////////////////////////
-jar {
-    dependsOn compileUtils
-
-    // include applicable class files from subset of Utilities project
-    from compileUtils.destinationDir
-}
 
 /////////////////////////////
 ////    Maven Publishing + Release
@@ -262,17 +242,6 @@ publishing {
             version project.version
 
             pom {
-                withXml {
-                    // eliminate logback and utilities (no need in maven POMs)
-                    def root = asNode()
-
-                    root.dependencies.'*'.findAll() {
-                        it.artifactId.text() == "Utilities"
-                    }.each() {
-                        it.parent().remove(it)
-                    }
-                }
-
                 name = project.ext.name
                 url = project.ext.url
                 description = project.description
