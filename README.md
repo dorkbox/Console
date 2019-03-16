@@ -103,7 +103,7 @@ Gradle Info
 ````
 dependencies {
     ...
-    compile 'com.dorkbox:Console:3.6'
+    compile "com.dorkbox:Console:3.6"
 }
 ````
 
