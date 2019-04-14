@@ -193,7 +193,7 @@ tasks.compileJava.get().apply {
 
 
 dependencies {
-    implementation("com.dorkbox:Utilities:1.0")
+    implementation("com.dorkbox:Utilities:1.1")
 
     implementation("net.java.dev.jna:jna:4.5.2")
     implementation("net.java.dev.jna:jna-platform:4.5.2")
