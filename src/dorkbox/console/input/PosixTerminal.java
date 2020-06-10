@@ -20,8 +20,8 @@ import java.nio.ByteBuffer;
 
 import com.sun.jna.ptr.IntByReference;
 
-import dorkbox.util.jna.linux.CLibraryPosix;
-import dorkbox.util.jna.linux.structs.Termios;
+import dorkbox.jna.linux.CLibraryPosix;
+import dorkbox.jna.linux.structs.Termios;
 
 /**
  * Terminal that is used for unix platforms. Terminal initialization is handled via JNA and ioctl/tcgetattr/tcsetattr/cfmakeraw.

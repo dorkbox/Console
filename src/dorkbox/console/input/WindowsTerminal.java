@@ -16,22 +16,22 @@ import static com.sun.jna.platform.win32.WinBase.INVALID_HANDLE_VALUE;
 import static com.sun.jna.platform.win32.WinNT.HANDLE;
 import static com.sun.jna.platform.win32.Wincon.STD_INPUT_HANDLE;
 import static com.sun.jna.platform.win32.Wincon.STD_OUTPUT_HANDLE;
-import static dorkbox.util.jna.windows.Kernel32.ASSERT;
-import static dorkbox.util.jna.windows.Kernel32.CloseHandle;
-import static dorkbox.util.jna.windows.Kernel32.GetConsoleMode;
-import static dorkbox.util.jna.windows.Kernel32.GetConsoleScreenBufferInfo;
-import static dorkbox.util.jna.windows.Kernel32.GetStdHandle;
-import static dorkbox.util.jna.windows.Kernel32.ReadConsoleInput;
-import static dorkbox.util.jna.windows.Kernel32.SetConsoleMode;
+import static dorkbox.jna.windows.Kernel32.ASSERT;
+import static dorkbox.jna.windows.Kernel32.CloseHandle;
+import static dorkbox.jna.windows.Kernel32.GetConsoleMode;
+import static dorkbox.jna.windows.Kernel32.GetConsoleScreenBufferInfo;
+import static dorkbox.jna.windows.Kernel32.GetStdHandle;
+import static dorkbox.jna.windows.Kernel32.ReadConsoleInput;
+import static dorkbox.jna.windows.Kernel32.SetConsoleMode;
 
 import java.io.IOException;
 import java.io.PrintStream;
 
 import com.sun.jna.ptr.IntByReference;
 
-import dorkbox.util.jna.windows.structs.CONSOLE_SCREEN_BUFFER_INFO;
-import dorkbox.util.jna.windows.structs.INPUT_RECORD;
-import dorkbox.util.jna.windows.structs.KEY_EVENT_RECORD;
+import dorkbox.jna.windows.structs.CONSOLE_SCREEN_BUFFER_INFO;
+import dorkbox.jna.windows.structs.INPUT_RECORD;
+import dorkbox.jna.windows.structs.KEY_EVENT_RECORD;
 
 /**
  * Terminal implementation for Microsoft Windows.

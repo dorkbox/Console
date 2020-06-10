@@ -40,7 +40,7 @@ import java.util.ArrayList;
 
 import dorkbox.console.Console;
 import dorkbox.util.OS;
-import dorkbox.util.jna.linux.CLibraryPosix;
+import dorkbox.jna.linux.CLibraryPosix;
 
 /**
  * Provides a fluent API for generating ANSI escape sequences and providing access to streams that support it.
