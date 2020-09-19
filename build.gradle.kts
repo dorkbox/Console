@@ -23,14 +23,16 @@ import java.time.Instant
 ////// RELEASE : (to sonatype/maven central), <'publish and release' - 'publishToSonatypeAndRelease'>
 ///////////////////////////////
 
+gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS   // always show the stacktrace!
+gradle.startParameter.warningMode = WarningMode.All
+
 plugins {
     java
 
-    id("com.dorkbox.GradleUtils") version "1.8"
-    id("com.dorkbox.CrossCompile") version "1.0.1"
-    id("com.dorkbox.Licensing") version "1.4"
-    id("com.dorkbox.VersionUpdate") version "1.4.1"
-    id("com.dorkbox.GradlePublish") version "1.2"
+    id("com.dorkbox.GradleUtils") version "1.9"
+    id("com.dorkbox.Licensing") version "2.2"
+    id("com.dorkbox.VersionUpdate") version "2.0"
+    id("com.dorkbox.GradlePublish") version "1.4"
 
     kotlin("jvm") version "1.3.72"
 }
@@ -48,11 +50,6 @@ object Extras {
     const val vendorUrl = "https://dorkbox.com"
     const val url = "https://git.dorkbox.com/dorkbox/Console"
     val buildDate = Instant.now().toString()
-
-    val JAVA_VERSION = JavaVersion.VERSION_1_6.toString()
-
-    var sonatypeUserName = ""
-    var sonatypePassword = ""
 }
 
 ///////////////////////////////
@@ -60,48 +57,36 @@ object Extras {
 ///////////////////////////////
 GradleUtils.load("$projectDir/../../gradle.properties", Extras)
 GradleUtils.fixIntellijPaths()
+GradleUtils.defaultResolutionStrategy()
+GradleUtils.compileConfiguration(JavaVersion.VERSION_11)
 
 licensing {
     license(License.APACHE_2) {
-        author(Extras.vendor)
+        description(Extras.description)
         url(Extras.url)
-        note(Extras.description)
-    }
-
-
-    license("Dorkbox Utils", License.APACHE_2) {
         author(Extras.vendor)
-        url("https://git.dorkbox.com/dorkbox/Utilities")
-    }
-
-    license("JAnsi", License.APACHE_2) {
-        copyright(2009)
-        author("Progress Software Corporation")
-        author("Joris Kuipers")
-        author("Jason Dillon")
-        author("Hiram Chirino")
-        url("https://github.com/fusesource/jansi")
-    }
-
-    license("JLine2", License.BSD_2) {
-        copyright(2012)
-        author("'Marc Prud\'hommeaux <mwp1@cornell.edu>'")
-        author("Daniel Doubrovkine")
-        author("Torbjorn Granlund")
-        author("David MacKenzie")
-        url("https://github.com/jline/jline2")
-    }
-
-    license("JNA", License.APACHE_2) {
-        copyright(2011)
-        author("Timothy Wall")
-        url("https://github.com/twall/jna")
-    }
-
-    license("SLF4J", License.MIT) {
-        copyright(2008)
-        author("QOS.ch")
-        url("http://www.slf4j.org")
+        extra("FastThreadLocal", License.BSD_3) {
+            it.copyright(2014)
+            it.author("Lightweight Java Game Library Project")
+            it.author("Riven")
+            it.url("https://github.com/LWJGL/lwjgl3/blob/5819c9123222f6ce51f208e022cb907091dd8023/modules/core/src/main/java/org/lwjgl/system/FastThreadLocal.java")
+        }
+        extra("JAnsi", License.APACHE_2) {
+            it.copyright(2009)
+            it.author("Progress Software Corporation")
+            it.author("Joris Kuipers")
+            it.author("Jason Dillon")
+            it.author("Hiram Chirino")
+            it.url("https://github.com/fusesource/jansi")
+        }
+        extra("JLine2", License.BSD_2) {
+            it.copyright(2012)
+            it.author("Marc Prud\'hommeaux <mwp1@cornell.edu>")
+            it.author("Daniel Doubrovkine")
+            it.author("Torbjorn Granlund")
+            it.author("David MacKenzie")
+            it.url("https://github.com/jline/jline2")
+        }
     }
 }
 
@@ -121,16 +106,6 @@ repositories {
     jcenter()
 }
 
-///////////////////////////////
-//////    Task defaults
-///////////////////////////////
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
-
-    sourceCompatibility = Extras.JAVA_VERSION
-    targetCompatibility = Extras.JAVA_VERSION
-}
-
 tasks.jar.get().apply {
     manifest {
         // https://docs.oracle.com/javase/tutorial/deployment/jar/packageman.html
@@ -148,16 +123,15 @@ tasks.jar.get().apply {
     }
 }
 
-tasks.compileJava.get().apply {
-    println("\tCompiling classes to Java $sourceCompatibility")
-}
-
 
 dependencies {
-    implementation("org.slf4j:slf4j-api:1.7.25")
+    implementation("org.slf4j:slf4j-api:1.7.30")
 
-    implementation("com.dorkbox:JnaUtilities:1.1")
-    implementation("com.dorkbox:Utilities:1.2")
+    val jnaVersion = "5.5.0"
+    implementation("net.java.dev.jna:jna:$jnaVersion")
+    implementation("net.java.dev.jna:jna-platform:$jnaVersion")
+
+    implementation("com.dorkbox:Utilities:1.6")
 }
 
 publishToSonatype {
