@@ -24,7 +24,6 @@ import java.nio.charset.Charset;
  * An ANSI string which reports the size of rendered text correctly (ignoring any ANSI escapes).
  *
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
- * @since 1.1
  */
 public
 class AnsiString implements CharSequence {
@@ -71,16 +70,19 @@ class AnsiString implements CharSequence {
 
     // FIXME: charAt() and subSequence() will make things barf, need to call toString() first to get expected results
 
+    @Override
     public
     int length() {
         return getPlain().length();
     }
 
+    @Override
     public
     char charAt(final int index) {
         return getEncoded().charAt(index);
     }
 
+    @Override
     public
     CharSequence subSequence(final int start, final int end) {
         return getEncoded().subSequence(start, end);

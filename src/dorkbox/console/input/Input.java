@@ -20,7 +20,7 @@ import java.io.InputStream;
 import java.util.Locale;
 
 import dorkbox.console.Console;
-import dorkbox.util.OS;
+import dorkbox.os.OS;
 
 public
 class Input {

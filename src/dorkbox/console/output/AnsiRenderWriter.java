@@ -28,7 +28,6 @@ import java.util.Locale;
  *
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
- * @since 1.1
  */
 public
 class AnsiRenderWriter extends PrintWriter {
