@@ -20,12 +20,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import dorkbox.util.FastThreadLocal;
-import dorkbox.util.bytes.ByteBuffer2;
+import dorkbox.bytes.ByteBuffer2;
 
 @SuppressWarnings("Duplicates")
 public
 class UnsupportedTerminal extends Terminal {
-
 
     private static final char[] NEW_LINE;
     private static final Thread backgroundReaderThread;

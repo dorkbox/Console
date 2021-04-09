@@ -29,19 +29,19 @@ gradle.startParameter.warningMode = WarningMode.All
 plugins {
     java
 
-    id("com.dorkbox.GradleUtils") version "1.9"
-    id("com.dorkbox.Licensing") version "2.2"
-    id("com.dorkbox.VersionUpdate") version "2.0"
-    id("com.dorkbox.GradlePublish") version "1.4"
+    id("com.dorkbox.GradleUtils") version "1.17"
+    id("com.dorkbox.Licensing") version "2.5.5"
+    id("com.dorkbox.VersionUpdate") version "2.3"
+    id("com.dorkbox.GradlePublish") version "1.10"
 
-    kotlin("jvm") version "1.3.72"
+    kotlin("jvm") version "1.4.32"
 }
 
 object Extras {
     // set for the project
-    const val description = "Unbuffered input and ANSI output support for Linux, MacOS, or Windows for Java 6+"
+    const val description = "Unbuffered input and ANSI output support for Linux, MacOS, or Windows for Java 8+"
     const val group = "com.dorkbox"
-    const val version = "3.7"
+    const val version = "3.8"
 
     // set as project.ext
     const val name = "Console"
@@ -49,6 +49,7 @@ object Extras {
     const val vendor = "Dorkbox LLC"
     const val vendorUrl = "https://dorkbox.com"
     const val url = "https://git.dorkbox.com/dorkbox/Console"
+
     val buildDate = Instant.now().toString()
 }
 
@@ -58,19 +59,21 @@ object Extras {
 GradleUtils.load("$projectDir/../../gradle.properties", Extras)
 GradleUtils.fixIntellijPaths()
 GradleUtils.defaultResolutionStrategy()
-GradleUtils.compileConfiguration(JavaVersion.VERSION_11)
+GradleUtils.compileConfiguration(JavaVersion.VERSION_1_8)
 
 licensing {
     license(License.APACHE_2) {
         description(Extras.description)
         url(Extras.url)
         author(Extras.vendor)
+
         extra("FastThreadLocal", License.BSD_3) {
             it.copyright(2014)
             it.author("Lightweight Java Game Library Project")
             it.author("Riven")
             it.url("https://github.com/LWJGL/lwjgl3/blob/5819c9123222f6ce51f208e022cb907091dd8023/modules/core/src/main/java/org/lwjgl/system/FastThreadLocal.java")
         }
+
         extra("JAnsi", License.APACHE_2) {
             it.copyright(2009)
             it.author("Progress Software Corporation")
@@ -79,6 +82,7 @@ licensing {
             it.author("Hiram Chirino")
             it.url("https://github.com/fusesource/jansi")
         }
+
         extra("JLine2", License.BSD_2) {
             it.copyright(2012)
             it.author("Marc Prud\'hommeaux <mwp1@cornell.edu>")
@@ -98,6 +102,21 @@ sourceSets {
             // want to include java files for the source. 'setSrcDirs' resets includes...
             include("**/*.java")
         }
+    }
+
+    test {
+        java {
+            setSrcDirs(listOf("test"))
+
+            // want to include java files for the source. 'setSrcDirs' resets includes...
+            include("**/*.java")
+        }
+//        kotlin {
+//            setSrcDirs(listOf("test"))
+//
+//            // want to include java files for the source. 'setSrcDirs' resets includes...
+//            include("**/*.java", "**/*.kt")
+//        }
     }
 }
 
@@ -125,13 +144,19 @@ tasks.jar.get().apply {
 
 
 dependencies {
+    implementation("com.dorkbox:ByteUtilities:1.0")
+    implementation("com.dorkbox:PropertyLoader:1.0")
+    implementation("com.dorkbox:Updates:1.0")
+    implementation("com.dorkbox:Utilities:1.9")
+
     implementation("org.slf4j:slf4j-api:1.7.30")
 
-    val jnaVersion = "5.5.0"
+    val jnaVersion = "5.8.0"
     implementation("net.java.dev.jna:jna:$jnaVersion")
     implementation("net.java.dev.jna:jna-platform:$jnaVersion")
 
-    implementation("com.dorkbox:Utilities:1.6")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("ch.qos.logback:logback-classic:1.2.3")
 }
 
 publishToSonatype {

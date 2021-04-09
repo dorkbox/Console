@@ -5,7 +5,7 @@ Console
 
 
 
-Unbuffered input and ANSI output support for linux, mac, windows. Java 6+
+Unbuffered input and ANSI output support for linux, mac, windows. Java 8+
 
 This library is a optimized combination of [JLine](https://github.com/jline/jline2) and [JAnsi](https://github.com/fusesource/jansi). While it is very similar in functionality to what these libraries provide, there are several things that are significantly different.
 
@@ -22,7 +22,7 @@ This library is a optimized combination of [JLine](https://github.com/jline/jlin
  1. Solves un-interruptable blocking reads from System.in when in an "unsupported" terminal (ie: anything other than a *nix/windows shell) so one can successfully stop reading from the input stream,
   
   
-- This is for cross-platform use, specifically - linux arm/32/64, mac 32/64, and windows 32/64. Java 6+
+- This is for cross-platform use, specifically - linux arm/32/64, mac 32/64, and windows 32/64. Java 8+
   
 Windows  
 ![Windows](https://git.dorkbox.com/dorkbox/Console/raw/branch/master/windows%20console.png)  
@@ -85,28 +85,22 @@ Maven Info
     <dependency>
       <groupId>com.dorkbox</groupId>
       <artifactId>Console</artifactId>
-      <version>3.6</version>
+      <version>3.8</version>
     </dependency>
 </dependencies>
 ```
 
 Gradle Info
 ---------
-````
+```
 dependencies {
     ...
-    compile "com.dorkbox:Console:3.6"
+    implementation("com.dorkbox:Console:3.8")
 }
-````
-
-Or if you don't want to use Maven, you can access the files directly here:  
-https://repo1.maven.org/maven2/com/dorkbox/Console/  
-
-https://repo1.maven.org/maven2/net/java/dev/jna/jna/  
-https://repo1.maven.org/maven2/net/java/dev/jna/jna-platform/  
-https://repo1.maven.org/maven2/org/slf4j/slf4j-api/  
+```
 
 License
 ---------
-This project is © 2010 dorkbox llc, and is distributed under the terms of the Apache v2.0 License. See file "LICENSE" for further references.
+This project is © 2021 dorkbox llc, and is distributed under the terms of the Apache v2.0 License. See file "LICENSE" for further 
+references.
 

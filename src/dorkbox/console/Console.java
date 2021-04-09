@@ -23,7 +23,7 @@ import dorkbox.console.input.Input;
 import dorkbox.console.input.Terminal;
 import dorkbox.console.output.Ansi;
 import dorkbox.console.output.AnsiOutputStream;
-import dorkbox.util.Property;
+import dorkbox.propertyLoader.Property;
 
 /**
  * Provides access to single character input streams and ANSI capable output streams.
@@ -84,7 +84,12 @@ class Console {
      */
     public static
     String getVersion() {
-        return "3.7";
+        return "3.8";
+    }
+
+    static {
+        // Add this project to the updates system, which verifies this class + UUID + version information
+        dorkbox.updates.Updates.INSTANCE.add(Console.class, "030fa739af4e4698ba99cf275a69d230", getVersion());
     }
 
     /**

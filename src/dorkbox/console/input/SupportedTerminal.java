@@ -21,11 +21,11 @@ import java.util.List;
 
 import org.slf4j.Logger;
 
+import dorkbox.bytes.ByteBuffer2;
 import dorkbox.console.Console;
 import dorkbox.console.output.Ansi;
 import dorkbox.console.util.CharHolder;
 import dorkbox.util.FastThreadLocal;
-import dorkbox.util.bytes.ByteBuffer2;
 
 public abstract
 class SupportedTerminal extends Terminal implements Runnable {
