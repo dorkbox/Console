@@ -19,8 +19,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import dorkbox.bytes.ByteArrayBuffer;
 import dorkbox.util.FastThreadLocal;
-import dorkbox.bytes.ByteBuffer2;
 
 @SuppressWarnings("Duplicates")
 public
@@ -70,11 +70,11 @@ class UnsupportedTerminal extends Terminal {
         backgroundReaderThread.start();
     }
 
-    private final FastThreadLocal<ByteBuffer2> buffer = new FastThreadLocal<ByteBuffer2>() {
+    private final FastThreadLocal<ByteArrayBuffer> buffer = new FastThreadLocal<ByteArrayBuffer>() {
         @Override
         public
-        ByteBuffer2 initialValue() {
-            return new ByteBuffer2(8, -1);
+        ByteArrayBuffer initialValue() {
+            return new ByteArrayBuffer(8, -1);
         }
     };
 
@@ -127,7 +127,7 @@ class UnsupportedTerminal extends Terminal {
     int read() {
         int position;
         // so, 'readCount' is REALLY the index at which we return letters (until the whole string is returned)
-        ByteBuffer2 buffer = this.buffer.get();
+        ByteArrayBuffer buffer = this.buffer.get();
         buffer.clearSecure();
 
         // we have to wait for more data.

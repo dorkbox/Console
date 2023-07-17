@@ -44,7 +44,7 @@ class Input {
             }
             else {
                 // if these cannot be created, because we are in an IDE, an error will be thrown
-                if (OS.isWindows()) {
+                if (OS.INSTANCE.isWindows()) {
                     term = new WindowsTerminal();
                 }
                 else {

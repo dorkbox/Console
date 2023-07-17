@@ -943,9 +943,9 @@ class Ansi {
 
 
         if (!isXterm()) {
-            if (OS.isWindows()) {
+            if (OS.INSTANCE.isWindows()) {
                 // check if windows10+ (which natively supports ANSI)
-                if (System.getProperty("os.version").startsWith("10.")) {
+                if (OS.Windows.INSTANCE.isWindows10_plus()) {
                     // Just wrap it up so that when we get closed, we reset the attributes.
                     return defaultPrintStream(stream, type);
                 }

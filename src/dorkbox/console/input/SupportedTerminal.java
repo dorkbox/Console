@@ -21,7 +21,8 @@ import java.util.List;
 
 import org.slf4j.Logger;
 
-import dorkbox.bytes.ByteBuffer2;
+import dorkbox.bytes.ByteArrayBuffer;
+import dorkbox.bytes.ByteBufInput;
 import dorkbox.console.Console;
 import dorkbox.console.output.Ansi;
 import dorkbox.console.util.CharHolder;
@@ -43,12 +44,12 @@ class SupportedTerminal extends Terminal implements Runnable {
         }
     };
 
-    private final List<ByteBuffer2> lineInputBuffers = new ArrayList<ByteBuffer2>();
-    private final FastThreadLocal<ByteBuffer2> lineInput = new FastThreadLocal<ByteBuffer2>() {
+    private final List<ByteArrayBuffer> lineInputBuffers = new ArrayList<ByteArrayBuffer>();
+    private final FastThreadLocal<ByteArrayBuffer> lineInput = new FastThreadLocal<ByteArrayBuffer>() {
         @Override
         public
-        ByteBuffer2 initialValue() {
-            return new ByteBuffer2(8, -1);
+        ByteArrayBuffer initialValue() {
+            return new ByteArrayBuffer(8, -1);
         }
     };
 
@@ -93,7 +94,7 @@ class SupportedTerminal extends Terminal implements Runnable {
     @Override
     public final
     char[] readLineChars() {
-        ByteBuffer2 buffer = lineInput.get();
+        ByteArrayBuffer buffer = lineInput.get();
 
         synchronized (inputLockLine) {
             // don't want to register a readLine() WHILE we are still processing the current line info.
@@ -180,7 +181,7 @@ class SupportedTerminal extends Terminal implements Runnable {
                 char[] overwrite = null;
 
                 // clear ourself + one extra.
-                for (ByteBuffer2 buffer : lineInputBuffers) {
+                for (ByteArrayBuffer buffer : lineInputBuffers) {
                     // size of the buffer BEFORE our backspace was typed
                     int length = buffer.position();
                     int amtToOverwrite = 4; // 2*2 backspace is always 2 chars (^?) * 2 because it's bytes
@@ -231,7 +232,7 @@ class SupportedTerminal extends Terminal implements Runnable {
             else {
                 // only append if we are not a new line.
                 // our windows console PREVENTS us from returning '\r' (it truncates '\r\n', and returns just '\n')
-                for (ByteBuffer2 buffer : lineInputBuffers) {
+                for (ByteArrayBuffer buffer : lineInputBuffers) {
                     buffer.writeChar(asChar);
                 }
             }

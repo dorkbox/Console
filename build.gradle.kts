@@ -29,12 +29,12 @@ gradle.startParameter.warningMode = WarningMode.All
 plugins {
     java
 
-    id("com.dorkbox.GradleUtils") version "1.17"
-    id("com.dorkbox.Licensing") version "2.5.5"
-    id("com.dorkbox.VersionUpdate") version "2.3"
-    id("com.dorkbox.GradlePublish") version "1.10"
+    id("com.dorkbox.GradleUtils") version "3.17"
+    id("com.dorkbox.Licensing") version "2.24"
+    id("com.dorkbox.VersionUpdate") version "2.8"
+    id("com.dorkbox.GradlePublish") version "1.18"
 
-    kotlin("jvm") version "1.4.32"
+    kotlin("jvm") version "1.8.0"
 }
 
 object Extras {
@@ -49,16 +49,13 @@ object Extras {
     const val vendor = "Dorkbox LLC"
     const val vendorUrl = "https://dorkbox.com"
     const val url = "https://git.dorkbox.com/dorkbox/Console"
-
-    val buildDate = Instant.now().toString()
 }
 
 ///////////////////////////////
 /////  assign 'Extras'
 ///////////////////////////////
 GradleUtils.load("$projectDir/../../gradle.properties", Extras)
-GradleUtils.fixIntellijPaths()
-GradleUtils.defaultResolutionStrategy()
+GradleUtils.defaults()
 GradleUtils.compileConfiguration(JavaVersion.VERSION_1_8)
 
 licensing {
@@ -68,61 +65,30 @@ licensing {
         author(Extras.vendor)
 
         extra("FastThreadLocal", License.BSD_3) {
-            it.copyright(2014)
-            it.author("Lightweight Java Game Library Project")
-            it.author("Riven")
-            it.url("https://github.com/LWJGL/lwjgl3/blob/5819c9123222f6ce51f208e022cb907091dd8023/modules/core/src/main/java/org/lwjgl/system/FastThreadLocal.java")
+            copyright(2014)
+            author("Lightweight Java Game Library Project")
+            author("Riven")
+            url("https://github.com/LWJGL/lwjgl3/blob/5819c9123222f6ce51f208e022cb907091dd8023/modules/core/src/main/java/org/lwjgl/system/FastThreadLocal.java")
         }
 
         extra("JAnsi", License.APACHE_2) {
-            it.copyright(2009)
-            it.author("Progress Software Corporation")
-            it.author("Joris Kuipers")
-            it.author("Jason Dillon")
-            it.author("Hiram Chirino")
-            it.url("https://github.com/fusesource/jansi")
+            copyright(2009)
+            author("Progress Software Corporation")
+            author("Joris Kuipers")
+            author("Jason Dillon")
+            author("Hiram Chirino")
+            url("https://github.com/fusesource/jansi")
         }
 
         extra("JLine2", License.BSD_2) {
-            it.copyright(2012)
-            it.author("Marc Prud\'hommeaux <mwp1@cornell.edu>")
-            it.author("Daniel Doubrovkine")
-            it.author("Torbjorn Granlund")
-            it.author("David MacKenzie")
-            it.url("https://github.com/jline/jline2")
+            copyright(2012)
+            author("Marc Prud\'hommeaux <mwp1@cornell.edu>")
+            author("Daniel Doubrovkine")
+            author("Torbjorn Granlund")
+            author("David MacKenzie")
+            url("https://github.com/jline/jline2")
         }
     }
-}
-
-sourceSets {
-    main {
-        java {
-            setSrcDirs(listOf("src"))
-
-            // want to include java files for the source. 'setSrcDirs' resets includes...
-            include("**/*.java")
-        }
-    }
-
-    test {
-        java {
-            setSrcDirs(listOf("test"))
-
-            // want to include java files for the source. 'setSrcDirs' resets includes...
-            include("**/*.java")
-        }
-//        kotlin {
-//            setSrcDirs(listOf("test"))
-//
-//            // want to include java files for the source. 'setSrcDirs' resets includes...
-//            include("**/*.java", "**/*.kt")
-//        }
-    }
-}
-
-repositories {
-    mavenLocal() // this must be first!
-    jcenter()
 }
 
 tasks.jar.get().apply {
@@ -135,7 +101,7 @@ tasks.jar.get().apply {
         attributes["Specification-Vendor"] = Extras.vendor
 
         attributes["Implementation-Title"] = "${Extras.group}.${Extras.id}"
-        attributes["Implementation-Version"] = Extras.buildDate
+        attributes["Implementation-Version"] = GradleUtils.now()
         attributes["Implementation-Vendor"] = Extras.vendor
 
         attributes["Automatic-Module-Name"] = Extras.id
@@ -144,20 +110,22 @@ tasks.jar.get().apply {
 
 
 dependencies {
-    implementation("com.dorkbox:ByteUtilities:1.0")
-    implementation("com.dorkbox:PropertyLoader:1.0")
-    implementation("com.dorkbox:Updates:1.0")
-    implementation("com.dorkbox:Utilities:1.9")
+    implementation("com.dorkbox:ByteUtilities:1.12")
+    implementation("com.dorkbox:PropertyLoader:1.3")
+    implementation("com.dorkbox:Updates:1.1")
+    implementation("com.dorkbox:JNA:1.0")
+    implementation("com.dorkbox:Utilities:1.43")
 
-    implementation("org.slf4j:slf4j-api:1.7.30")
+    api("org.slf4j:slf4j-api:2.0.7")
 
-    val jnaVersion = "5.8.0"
+    val jnaVersion = "5.12.1"
     implementation("net.java.dev.jna:jna:$jnaVersion")
     implementation("net.java.dev.jna:jna-platform:$jnaVersion")
 
     testImplementation("junit:junit:4.13.2")
-    testImplementation("ch.qos.logback:logback-classic:1.2.3")
+    testImplementation("ch.qos.logback:logback-classic:1.4.5")
 }
+
 
 publishToSonatype {
     groupId = Extras.group
