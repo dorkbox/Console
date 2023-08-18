@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ dependencies {
     api("com.dorkbox:ByteUtilities:1.14")
     api("com.dorkbox:PropertyLoader:1.3")
     api("com.dorkbox:Updates:1.1")
-    api("com.dorkbox:JNA:1.0")
+    api("com.dorkbox:JNA:1.1")
     api("com.dorkbox:Utilities:1.44")
 
     api("org.slf4j:slf4j-api:2.0.7")
