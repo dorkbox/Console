@@ -57,6 +57,7 @@ object Extras {
 GradleUtils.load("$projectDir/../../gradle.properties", Extras)
 GradleUtils.defaults()
 GradleUtils.compileConfiguration(JavaVersion.VERSION_1_8)
+GradleUtils.jpms(JavaVersion.VERSION_1_9)
 
 licensing {
     license(License.APACHE_2) {
@@ -103,17 +104,17 @@ tasks.jar.get().apply {
 
 
 dependencies {
-    implementation("com.dorkbox:ByteUtilities:1.14")
-    implementation("com.dorkbox:PropertyLoader:1.3")
-    implementation("com.dorkbox:Updates:1.1")
-    implementation("com.dorkbox:JNA:1.0")
-    implementation("com.dorkbox:Utilities:1.44")
+    api("com.dorkbox:ByteUtilities:1.14")
+    api("com.dorkbox:PropertyLoader:1.3")
+    api("com.dorkbox:Updates:1.1")
+    api("com.dorkbox:JNA:1.0")
+    api("com.dorkbox:Utilities:1.44")
 
     api("org.slf4j:slf4j-api:2.0.7")
 
     val jnaVersion = "5.12.1"
-    implementation("net.java.dev.jna:jna:$jnaVersion")
-    implementation("net.java.dev.jna:jna-platform:$jnaVersion")
+    api("net.java.dev.jna:jna:$jnaVersion")
+    api("net.java.dev.jna:jna-platform:$jnaVersion")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("ch.qos.logback:logback-classic:1.4.5")
