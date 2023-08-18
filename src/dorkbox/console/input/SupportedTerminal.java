@@ -22,11 +22,9 @@ import java.util.List;
 import org.slf4j.Logger;
 
 import dorkbox.bytes.ByteArrayBuffer;
-import dorkbox.bytes.ByteBufInput;
 import dorkbox.console.Console;
 import dorkbox.console.output.Ansi;
 import dorkbox.console.util.CharHolder;
-import dorkbox.util.FastThreadLocal;
 
 public abstract
 class SupportedTerminal extends Terminal implements Runnable {
@@ -36,7 +34,7 @@ class SupportedTerminal extends Terminal implements Runnable {
     protected final Object inputLockSingle = new Object();
 
     protected final List<CharHolder> charInputBuffers = new ArrayList<CharHolder>();
-    protected final FastThreadLocal<CharHolder> charInput = new FastThreadLocal<CharHolder>() {
+    protected final ThreadLocal<CharHolder> charInput = new ThreadLocal<CharHolder>() {
         @Override
         public
         CharHolder initialValue() {
@@ -45,7 +43,7 @@ class SupportedTerminal extends Terminal implements Runnable {
     };
 
     private final List<ByteArrayBuffer> lineInputBuffers = new ArrayList<ByteArrayBuffer>();
-    private final FastThreadLocal<ByteArrayBuffer> lineInput = new FastThreadLocal<ByteArrayBuffer>() {
+    private final ThreadLocal<ByteArrayBuffer> lineInput = new ThreadLocal<ByteArrayBuffer>() {
         @Override
         public
         ByteArrayBuffer initialValue() {

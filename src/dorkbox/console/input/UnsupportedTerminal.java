@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import dorkbox.bytes.ByteArrayBuffer;
-import dorkbox.util.FastThreadLocal;
 
 @SuppressWarnings("Duplicates")
 public
@@ -70,7 +69,7 @@ class UnsupportedTerminal extends Terminal {
         backgroundReaderThread.start();
     }
 
-    private final FastThreadLocal<ByteArrayBuffer> buffer = new FastThreadLocal<ByteArrayBuffer>() {
+    private final ThreadLocal<ByteArrayBuffer> buffer = new ThreadLocal<ByteArrayBuffer>() {
         @Override
         public
         ByteArrayBuffer initialValue() {
@@ -78,7 +77,7 @@ class UnsupportedTerminal extends Terminal {
         }
     };
 
-    private final FastThreadLocal<Integer> readCount = new FastThreadLocal<Integer>() {
+    private final ThreadLocal<Integer> readCount = new ThreadLocal<Integer>() {
         @Override
         public
         Integer initialValue() {

@@ -324,7 +324,7 @@
            Copyright 2023
              JetBrains s.r.o.
 
-         - Collections - Niche collections to augment what is already available.
+         - Collections - Collection types and utilities to enhance the default collections.
            [The Apache Software License, Version 2.0]
            https://git.dorkbox.com/dorkbox/Collections
            Copyright 2023
@@ -373,19 +373,6 @@
                  Mario Zechner (badlogicgames@gmail.com)
                  Nathan Sweet (nathan.sweet@gmail.com)
                  Jon Renner
-
-             - TimSort, ComparableTimSort - 
-               [The Apache Software License, Version 2.0]
-               https://git.dorkbox.com/dorkbox/Collections
-               https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/utils
-               Copyright 2008
-                 The Android Open Source Project
-
-             - ConcurrentWeakIdentityHashMap - Concurrent WeakIdentity HashMap
-               [The Apache Software License, Version 2.0]
-               https://github.com/spring-projects/spring-loaded/blob/master/springloaded/src/main/java/org/springsource/loaded/support/ConcurrentWeakIdentityHashMap.java
-               Copyright 2016
-                 zhanhb
 
              - Kotlin - 
                [The Apache Software License, Version 2.0]

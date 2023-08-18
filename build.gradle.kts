@@ -30,7 +30,7 @@ plugins {
     java
 
     id("com.dorkbox.GradleUtils") version "3.17"
-    id("com.dorkbox.Licensing") version "2.24"
+    id("com.dorkbox.Licensing") version "2.26"
     id("com.dorkbox.VersionUpdate") version "2.8"
     id("com.dorkbox.GradlePublish") version "1.18"
 
@@ -63,13 +63,6 @@ licensing {
         description(Extras.description)
         url(Extras.url)
         author(Extras.vendor)
-
-        extra("FastThreadLocal", License.BSD_3) {
-            copyright(2014)
-            author("Lightweight Java Game Library Project")
-            author("Riven")
-            url("https://github.com/LWJGL/lwjgl3/blob/5819c9123222f6ce51f208e022cb907091dd8023/modules/core/src/main/java/org/lwjgl/system/FastThreadLocal.java")
-        }
 
         extra("JAnsi", License.APACHE_2) {
             copyright(2009)
@@ -110,11 +103,11 @@ tasks.jar.get().apply {
 
 
 dependencies {
-    implementation("com.dorkbox:ByteUtilities:1.12")
+    implementation("com.dorkbox:ByteUtilities:1.14")
     implementation("com.dorkbox:PropertyLoader:1.3")
     implementation("com.dorkbox:Updates:1.1")
     implementation("com.dorkbox:JNA:1.0")
-    implementation("com.dorkbox:Utilities:1.43")
+    implementation("com.dorkbox:Utilities:1.44")
 
     api("org.slf4j:slf4j-api:2.0.7")
 
