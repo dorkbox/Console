@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,34 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.console.output;
+package dorkbox.console.output
 
-import static dorkbox.console.output.AnsiOutputStream.ERASE_ALL;
-import static dorkbox.console.output.AnsiOutputStream.ERASE_TO_BEGINNING;
-import static dorkbox.console.output.AnsiOutputStream.ERASE_TO_END;
+enum class Erase(private val value: Int,
+                 private val namePriv: String) {
 
-public
-enum Erase {
-    FORWARD(ERASE_TO_END, "FORWARD"),
-    BACKWARD(ERASE_TO_BEGINNING, "BACKWARD"),
-    ALL(ERASE_ALL, "ALL");
+    FORWARD(AnsiOutputStream.ERASE_TO_END, "FORWARD"),
+    BACKWARD(AnsiOutputStream.ERASE_TO_BEGINNING, "BACKWARD"),
+    ALL(AnsiOutputStream.ERASE_ALL, "ALL");
 
-    private final int value;
-    private final String name;
-
-    Erase(int index, String name) {
-        this.value = index;
-        this.name = name;
+    override fun toString(): String {
+        return namePriv
     }
 
-    @Override
-    public
-    String toString() {
-        return name;
-    }
-
-    public
-    int value() {
-        return value;
+    fun value(): Int {
+        return value
     }
 }

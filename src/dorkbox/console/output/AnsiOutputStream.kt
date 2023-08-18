@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,30 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
- * Copyright (C) 2009, Progress Software Corporation and/or its
- * subsidiaries or affiliates.  All rights reserved.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a asValue of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
-package dorkbox.console.output;
+package dorkbox.console.output
 
-import java.io.FilterOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
+import java.io.FilterOutputStream
+import java.io.IOException
+import java.io.OutputStream
+import java.nio.charset.Charset
 
 /**
  * A ANSI output stream extracts ANSI escape codes written to an output stream.
@@ -47,539 +30,531 @@ import java.util.ArrayList;
  * actually perform the ANSI escape behaviors.
  *
  * @author dorkbox, llc
- * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+ * @author [Hiram Chirino](http://hiramchirino.com)
  * @author Joris Kuipers
  */
-@SuppressWarnings({"NumericCastThatLosesPrecision", "WeakerAccess"})
-public
-class AnsiOutputStream extends FilterOutputStream {
-    private static final Charset CHARSET = Charset.forName("UTF-8");
+open class AnsiOutputStream(os: OutputStream?) : FilterOutputStream(os) {
+    private var state = STATE.LOOKING_FOR_FIRST_ESC_CHAR
+    private val buffer = ByteArray(MAX_ESCAPE_SEQUENCE_LENGTH)
 
-    static final int BLACK   = 0;
-    static final int RED     = 1;
-    static final int GREEN   = 2;
-    static final int YELLOW  = 3;
-    static final int BLUE    = 4;
-    static final int MAGENTA = 5;
-    static final int CYAN    = 6;
-    static final int WHITE   = 7;
+    private var pos = 0
+    private var startOfValue = 0
 
-    static final char CURSOR_UP        = 'A'; // Moves the cursor n (default 1) cells in the given direction. If the cursor is already at the edge of the screen, this has no effect.
-    static final char CURSOR_DOWN      = 'B';
-    static final char CURSOR_FORWARD   = 'C';
-    static final char CURSOR_BACK      = 'D';
+    private val options = ArrayList<Any?>()
 
-    static final char CURSOR_DOWN_LINE = 'E'; // Moves cursor to beginning of the line n (default 1) lines down.
-    static final char CURSOR_UP_LINE   = 'F'; // Moves cursor to beginning of the line n (default 1) lines up.
-
-    static final char CURSOR_TO_COL    = 'G'; // Moves the cursor to column n (default 1).
-
-    static final char CURSOR_POS       = 'H'; // Moves the cursor to row n, column m. The values are 1-based, and default to 1 (top left corner) if omitted.
-    static final char CURSOR_POS_ALT   = 'f'; // Moves the cursor to row n, column m. Both default to 1 if omitted. Same as CUP
-
-    static final char CURSOR_ERASE_SCREEN = 'J'; // Clears part of the screen. If n is 0 (or missing), clear from cursor to end of screen. If n is 1, clear from cursor to beginning of the screen. If n is 2, clear entire screen (and moves cursor to upper left on DOS ANSI.SYS).
-    static final char CURSOR_ERASE_LINE   = 'K'; // Erases part of the line. If n is zero (or missing), clear from cursor to the end of the line. If n is one, clear from cursor to beginning of the line. If n is two, clear entire line. Cursor position does not change.
-
-
-    static final char SCROLL_UP           = 'S'; // Scroll whole page up by n (default 1) lines. New lines are added at the bottom. (not ANSI.SYS)
-    static final char SCROLL_DOWN         = 'T'; // Scroll whole page down by n (default 1) lines. New lines are added at the top. (not ANSI.SYS)
-
-    static final char SAVE_CURSOR_POS     = 's'; // Saves the cursor position.
-    static final char RESTORE_CURSOR_POS  = 'u'; // Restores the cursor position.
-    static final char TEXT_ATTRIBUTE      = 'm'; // Sets SGR parameters, including text color. After CSI can be zero or more parameters separated with ;. With no parameters, CSI m is treated as CSI 0 m (reset / normal), which is typical of most of the ANSI escape sequences.
-
-    static final int ATTRIBUTE_RESET             = 0; // Reset / Normal - all attributes off
-    static final int ATTRIBUTE_BOLD              = 1; // Intensity: Bold
-    static final int ATTRIBUTE_FAINT             = 2; // Intensity; Faint (not widely supported)
-    static final int ATTRIBUTE_ITALIC            = 3; // Italic; (on not widely supported. Sometimes treated as inverse)
-    static final int ATTRIBUTE_UNDERLINE         = 4; // Underline; Single
-    static final int ATTRIBUTE_BLINK_SLOW        = 5; // Blink; Slow  less than 150 per minute
-    static final int ATTRIBUTE_BLINK_FAST        = 6; // Blink; Rapid 150 per minute or more
-    static final int ATTRIBUTE_NEGATIVE_ON       = 7; // Negative inverse or reverse; swap foreground and background
-    static final int ATTRIBUTE_CONCEAL_ON        = 8; // Conceal on
-    static final int ATTRIBUTE_STRIKETHROUGH_ON  = 9;  // Crossed-out
-
-    static final int ATTRIBUTE_UNDERLINE_DOUBLE  = 21; // Underline; Double not widely supported
-    static final int ATTRIBUTE_NORMAL            = 22; // Intensity; Normal not bold and not faint
-    static final int ATTRIBUTE_ITALIC_OFF        = 23; // Not italic
-    static final int ATTRIBUTE_UNDERLINE_OFF     = 24; // Underline; None
-    static final int ATTRIBUTE_BLINK_OFF         = 25; // Blink; off
-    static final int ATTRIBUTE_NEGATIVE_OFF      = 27; // Image; Positive
-    static final int ATTRIBUTE_CONCEAL_OFF       = 28; // Reveal conceal off
-    static final int ATTRIBUTE_STRIKETHROUGH_OFF = 29; // Not crossed out
-
-
-    static final int ATTRIBUTE_DEFAULT_FG = 39; //  Default text color (foreground)
-    static final int ATTRIBUTE_DEFAULT_BG = 49; //  Default background color
-
-
-    // for Erase Screen/Line
-    static final int ERASE_TO_END = 0;
-    static final int ERASE_TO_BEGINNING = 1;
-    static final int ERASE_ALL = 2;
-
-
-
-    private final static int MAX_ESCAPE_SEQUENCE_LENGTH = 100;
-
-    private static final int LOOKING_FOR_FIRST_ESC_CHAR = 0;
-    private static final int LOOKING_FOR_SECOND_ESC_CHAR = 1;
-
-    private static final int LOOKING_FOR_NEXT_ARG = 2;
-    private static final int LOOKING_FOR_STR_ARG_END = 3;
-    private static final int LOOKING_FOR_INT_ARG_END = 4;
-    private static final int LOOKING_FOR_OSC_COMMAND = 5;
-    private static final int LOOKING_FOR_OSC_COMMAND_END = 6;
-    private static final int LOOKING_FOR_OSC_PARAM = 7;
-    private static final int LOOKING_FOR_ST = 8;
-
-    private int state = LOOKING_FOR_FIRST_ESC_CHAR;
-
-    private static final int FIRST_ESC_CHAR = 27;
-    private static final int SECOND_ESC_CHAR = '[';
-    private static final int SECOND_OSC_CHAR = ']';
-    private static final int BEL = 7;
-    private static final int SECOND_ST_CHAR = '\\';
-
-
-    public static final byte[] RESET_CODE = new StringBuilder(3).append((char)FIRST_ESC_CHAR)
-                                                                .append((char)SECOND_ESC_CHAR)
-                                                                .append(AnsiOutputStream.TEXT_ATTRIBUTE)
-                                                                .toString()
-                                                                .getBytes(CHARSET);
-
-    public
-    AnsiOutputStream(OutputStream os) {
-        super(os);
-    }
-
-
-    private byte buffer[] = new byte[MAX_ESCAPE_SEQUENCE_LENGTH];
-    private int pos = 0;
-    private int startOfValue;
-    private final ArrayList<Object> options = new ArrayList<Object>();
-
-
-    @Override
-    public
-    void write(int data) throws IOException {
-        switch (state) {
-            case LOOKING_FOR_FIRST_ESC_CHAR:
+    @Throws(IOException::class)
+    override fun write(data: Int) {
+        when (state) {
+            STATE.LOOKING_FOR_FIRST_ESC_CHAR  -> {
                 if (data == FIRST_ESC_CHAR) {
-                    buffer[pos++] = (byte) data;
-                    state = LOOKING_FOR_SECOND_ESC_CHAR;
+                    buffer[pos++] = data.toByte()
+                    state = STATE.LOOKING_FOR_SECOND_ESC_CHAR
                 }
                 else {
-                    out.write(data);
+                    out.write(data)
                 }
-                break;
+            }
 
-            case LOOKING_FOR_SECOND_ESC_CHAR:
-                buffer[pos++] = (byte) data;
-
+            STATE.LOOKING_FOR_SECOND_ESC_CHAR -> {
+                buffer[pos++] = data.toByte()
                 if (data == SECOND_ESC_CHAR) {
-                    state = LOOKING_FOR_NEXT_ARG;
+                    state = STATE.LOOKING_FOR_NEXT_ARG
                 }
                 else if (data == SECOND_OSC_CHAR) {
-                    state = LOOKING_FOR_OSC_COMMAND;
+                    state = STATE.LOOKING_FOR_OSC_COMMAND
                 }
                 else {
-                    reset(false);
+                    reset(false)
                 }
-                break;
+            }
 
-            case LOOKING_FOR_NEXT_ARG:
-                buffer[pos++] = (byte) data;
+            STATE.LOOKING_FOR_NEXT_ARG        -> {
+                buffer[pos++] = data.toByte()
 
-                if ('"' == data) {
-                    startOfValue = pos - 1;
-                    state = LOOKING_FOR_STR_ARG_END;
+                if ('"'.code == data) {
+                    startOfValue = pos - 1
+                    state = STATE.LOOKING_FOR_STR_ARG_END
                 }
-                else if ('0' <= data && data <= '9') {
-                    startOfValue = pos - 1;
-                    state = LOOKING_FOR_INT_ARG_END;
+                else if ('0'.code <= data && data <= '9'.code) {
+                    startOfValue = pos - 1
+                    state = STATE.LOOKING_FOR_INT_ARG_END
                 }
-                else if (';' == data) {
-                    options.add(null);
+                else if (';'.code == data) {
+                    options.add(null)
                 }
-                else if ('?' == data) {
-                    options.add('?');
+                else if ('?'.code == data) {
+                    options.add('?')
                 }
-                else if ('=' == data) {
-                    options.add('=');
+                else if ('='.code == data) {
+                    options.add('=')
                 }
                 else {
-                    reset(processEscapeCommand(options, data));
+                    reset(processEscapeCommand(options, data.toChar()))
                 }
-                break;
+            }
 
-            case LOOKING_FOR_INT_ARG_END:
-                buffer[pos++] = (byte) data;
+            STATE.LOOKING_FOR_INT_ARG_END     -> {
+                buffer[pos++] = data.toByte()
 
-                if (!('0' <= data && data <= '9')) {
-                    String strValue = new String(buffer, startOfValue, (pos - 1) - startOfValue, CHARSET);
-                    Integer value = Integer.valueOf(strValue);
-                    options.add(value);
-                    if (data == ';') {
-                        state = LOOKING_FOR_NEXT_ARG;
+                if (!('0'.code <= data && data <= '9'.code)) {
+                    val strValue = String(buffer, startOfValue, pos - 1 - startOfValue, CHARSET)
+                    val value = strValue.toInt()
+                    options.add(value)
+
+                    if (data == ';'.code) {
+                        state = STATE.LOOKING_FOR_NEXT_ARG
                     }
                     else {
-                        reset(processEscapeCommand(options, data));
+                        reset(processEscapeCommand(options, data.toChar()))
                     }
                 }
-                break;
+            }
 
-            case LOOKING_FOR_STR_ARG_END:
-                buffer[pos++] = (byte) data;
+            STATE.LOOKING_FOR_STR_ARG_END     -> {
+                buffer[pos++] = data.toByte()
 
-                if ('"' != data) {
-                    String value = new String(buffer, startOfValue, (pos - 1) - startOfValue, CHARSET);
-                    options.add(value);
-                    if (data == ';') {
-                        state = LOOKING_FOR_NEXT_ARG;
+                if ('"'.code != data) {
+                    val value = String(buffer, startOfValue, pos - 1 - startOfValue, CHARSET)
+                    options.add(value)
+
+                    if (data == ';'.code) {
+                        state = STATE.LOOKING_FOR_NEXT_ARG
                     }
                     else {
-                        reset(processEscapeCommand(options, data));
+                        reset(processEscapeCommand(options, data.toChar()))
                     }
                 }
-                break;
+            }
 
-            case LOOKING_FOR_OSC_COMMAND:
-                buffer[pos++] = (byte) data;
+            STATE.LOOKING_FOR_OSC_COMMAND     -> {
+                buffer[pos++] = data.toByte()
 
-                if ('0' <= data && data <= '9') {
-                    startOfValue = pos - 1;
-                    state = LOOKING_FOR_OSC_COMMAND_END;
+                if ('0'.code <= data && data <= '9'.code) {
+                    startOfValue = pos - 1
+                    state = STATE.LOOKING_FOR_OSC_COMMAND_END
                 }
                 else {
-                    reset(false);
+                    reset(false)
                 }
-                break;
+            }
 
-            case LOOKING_FOR_OSC_COMMAND_END:
-                buffer[pos++] = (byte) data;
+            STATE.LOOKING_FOR_OSC_COMMAND_END -> {
+                buffer[pos++] = data.toByte()
 
-                if (';' == data) {
-                    String strValue = new String(buffer, startOfValue, (pos - 1) - startOfValue, CHARSET);
-                    Integer value = Integer.valueOf(strValue);
-                    options.add(value);
-                    startOfValue = pos;
-                    state = LOOKING_FOR_OSC_PARAM;
+                if (';'.code == data) {
+                    val strValue = String(buffer, startOfValue, pos - 1 - startOfValue, CHARSET)
+                    val value = strValue.toInt()
+                    options.add(value)
+                    startOfValue = pos
+                    state = STATE.LOOKING_FOR_OSC_PARAM
                 }
-                else if ('0' <= data && data <= '9') {
+                else if ('0'.code <= data && data <= '9'.code) {
                     // already pushed digit to buffer, just keep looking
                 }
                 else {
                     // oops, did not expect this
-                    reset(false);
+                    reset(false)
                 }
-                break;
+            }
 
-            case LOOKING_FOR_OSC_PARAM:
-                buffer[pos++] = (byte) data;
+            STATE.LOOKING_FOR_OSC_PARAM       -> {
+                buffer[pos++] = data.toByte()
 
                 if (BEL == data) {
-                    String value = new String(buffer, startOfValue, (pos - 1) - startOfValue, CHARSET);
-                    options.add(value);
-                    reset(processOperatingSystemCommand(options));
+                    val value = String(buffer, startOfValue, pos - 1 - startOfValue, CHARSET)
+                    options.add(value)
+                    reset(processOperatingSystemCommand(options))
                 }
                 else if (FIRST_ESC_CHAR == data) {
-                    state = LOOKING_FOR_ST;
+                    state = STATE.LOOKING_FOR_ST
                 }
                 else {
                     // just keep looking while adding text
                 }
-                break;
+            }
 
-            case LOOKING_FOR_ST:
-                buffer[pos++] = (byte) data;
+            STATE.LOOKING_FOR_ST              -> {
+                buffer[pos++] = data.toByte()
 
                 if (SECOND_ST_CHAR == data) {
-                    String value = new String(buffer, startOfValue, (pos - 2) - startOfValue, CHARSET);
-                    options.add(value);
-                    reset(processOperatingSystemCommand(options));
+                    val value = String(buffer, startOfValue, pos - 2 - startOfValue, CHARSET)
+                    options.add(value)
+                    reset(processOperatingSystemCommand(options))
                 }
                 else {
-                    state = LOOKING_FOR_OSC_PARAM;
+                    state = STATE.LOOKING_FOR_OSC_PARAM
                 }
-                break;
-
+            }
         }
 
         // Is it just too long?
-        if (pos >= buffer.length) {
-            reset(false);
+        if (pos >= buffer.size) {
+            reset(false)
         }
     }
 
     /**
      * Resets all state to continue with regular parsing
+     *
      * @param skipBuffer if current buffer should be skipped or written to out
      * @throws IOException
      */
-    private
-    void reset(boolean skipBuffer) throws IOException {
+    @Throws(IOException::class)
+    private fun reset(skipBuffer: Boolean) {
         if (!skipBuffer) {
-            out.write(buffer, 0, pos);
+            out.write(buffer, 0, pos)
         }
-
-        pos = 0;
-        startOfValue = 0;
-        options.clear();
-        state = LOOKING_FOR_FIRST_ESC_CHAR;
+        pos = 0
+        startOfValue = 0
+        options.clear()
+        state = STATE.LOOKING_FOR_FIRST_ESC_CHAR
     }
 
     /**
      * @return true if the escape command was processed.
      */
-    private
-    boolean processEscapeCommand(ArrayList<Object> options, int command) throws IOException {
+    @Throws(IOException::class)
+    private fun processEscapeCommand(options: ArrayList<Any?>, command: Char): Boolean {
         try {
-            switch (command) {
-                case CURSOR_UP:
-                    processCursorUp(optionInt(options, 0, 1));
-                    return true;
-                case CURSOR_DOWN:
-                    processCursorDown(optionInt(options, 0, 1));
-                    return true;
-                case CURSOR_FORWARD:
-                    processCursorRight(optionInt(options, 0, 1));
-                    return true;
-                case CURSOR_BACK:
-                    processCursorLeft(optionInt(options, 0, 1));
-                    return true;
-                case CURSOR_DOWN_LINE:
-                    processCursorDownLine(optionInt(options, 0, 1));
-                    return true;
-                case CURSOR_UP_LINE:
-                    processCursorUpLine(optionInt(options, 0, 1));
-                    return true;
-                case CURSOR_TO_COL:
-                    processCursorToColumn(optionInt(options, 0));
-                    return true;
-                case CURSOR_POS:
-                case CURSOR_POS_ALT:
-                    processCursorTo(optionInt(options, 0, 1), optionInt(options, 1, 1));
-                    return true;
-                case CURSOR_ERASE_SCREEN:
-                    processEraseScreen(optionInt(options, 0, 0));
-                    return true;
-                case CURSOR_ERASE_LINE:
-                    processEraseLine(optionInt(options, 0, 0));
-                    return true;
-                case SCROLL_UP:
-                    processScrollUp(optionInt(options, 0, 1));
-                    return true;
-                case SCROLL_DOWN:
-                    processScrollDown(optionInt(options, 0, 1));
-                    return true;
-                case TEXT_ATTRIBUTE:
-                    int count = 0;
-                    for (Object next : options) {
+            return when (command) {
+                CURSOR_UP                  -> {
+                    processCursorUp(optionInt(options, 0, 1))
+                    true
+                }
+
+                CURSOR_DOWN                -> {
+                    processCursorDown(optionInt(options, 0, 1))
+                    true
+                }
+
+                CURSOR_FORWARD             -> {
+                    processCursorRight(optionInt(options, 0, 1))
+                    true
+                }
+
+                CURSOR_BACK                -> {
+                    processCursorLeft(optionInt(options, 0, 1))
+                    true
+                }
+
+                CURSOR_DOWN_LINE           -> {
+                    processCursorDownLine(optionInt(options, 0, 1))
+                    true
+                }
+
+                CURSOR_UP_LINE             -> {
+                    processCursorUpLine(optionInt(options, 0, 1))
+                    true
+                }
+
+                CURSOR_TO_COL              -> {
+                    processCursorToColumn(optionInt(options, 0))
+                    true
+                }
+
+                CURSOR_POS, CURSOR_POS_ALT -> {
+                    processCursorTo(optionInt(options, 0, 1), optionInt(options, 1, 1))
+                    true
+                }
+
+                CURSOR_ERASE_SCREEN        -> {
+                    processEraseScreen(optionInt(options, 0, 0))
+                    true
+                }
+
+                CURSOR_ERASE_LINE          -> {
+                    processEraseLine(optionInt(options, 0, 0))
+                    true
+                }
+
+                SCROLL_UP                  -> {
+                    processScrollUp(optionInt(options, 0, 1))
+                    true
+                }
+
+                SCROLL_DOWN                -> {
+                    processScrollDown(optionInt(options, 0, 1))
+                    true
+                }
+
+                TEXT_ATTRIBUTE             -> {
+                    var count = 0
+                    for (next in options) {
                         if (next != null) {
-                            count++;
+                            count++
 
                             // will throw a ClassCast exception IF NOT an int.
-                            int value = (Integer) next;
-
+                            val value = next as Int
                             if (30 <= value && value <= 37) {
                                 // foreground
-                                processSetForegroundColor(value - 30);
+                                processSetForegroundColor(value - 30)
                             }
                             else if (40 <= value && value <= 47) {
                                 // background
-                                processSetBackgroundColor(value - 40);
+                                processSetBackgroundColor(value - 40)
                             }
                             else {
-                                switch (value) {
-                                    case ATTRIBUTE_DEFAULT_FG:
-                                        processDefaultTextColor();
-                                        break;
-                                    case ATTRIBUTE_DEFAULT_BG:
-                                        processDefaultBackgroundColor();
-                                        break;
-                                    case ATTRIBUTE_RESET:
-                                        processAttributeReset();
-                                        break;
-                                    default:
-                                        processSetAttribute(value);
+                                when (value) {
+                                    ATTRIBUTE_DEFAULT_FG -> processDefaultTextColor()
+                                    ATTRIBUTE_DEFAULT_BG -> processDefaultBackgroundColor()
+                                    ATTRIBUTE_RESET      -> processAttributeReset()
+                                    else                 -> processSetAttribute(value)
                                 }
                             }
                         }
                     }
-
                     if (count == 0) {
-                        processAttributeReset();
+                        processAttributeReset()
                     }
-                    return true;
-                case SAVE_CURSOR_POS:
-                    processSaveCursorPosition();
-                    return true;
-                case RESTORE_CURSOR_POS:
-                    processRestoreCursorPosition();
-                    return true;
+                    true
+                }
 
-                default:
-                    if ('a' <= command && command <= 'z') {
-                        processUnknownExtension(options, command);
-                        return true;
+                SAVE_CURSOR_POS            -> {
+                    processSaveCursorPosition()
+                    true
+                }
+
+                RESTORE_CURSOR_POS         -> {
+                    processRestoreCursorPosition()
+                    true
+                }
+
+                else                       -> {
+                    if (command in 'a'..'z') {
+                        processUnknownExtension(options, command)
+                        return true
                     }
-                    if ('A' <= command && command <= 'Z') {
-                        processUnknownExtension(options, command);
-                        return true;
+                    if (command in 'A'..'Z') {
+                        processUnknownExtension(options, command)
+                        return true
                     }
-                    return false;
+                    false
+                }
             }
-        } catch (IllegalArgumentException ignore) {
         }
-
-        return false;
+        catch (ignore: IllegalArgumentException) {
+        }
+        return false
     }
-
 
     /**
      * @return true if the operating system command was processed.
      */
-    private
-    boolean processOperatingSystemCommand(final ArrayList<Object> options) throws IOException {
-        final int command = optionInt(options, 0);
-        final String label = (String) options.get(1);
+    @Throws(IOException::class)
+    private fun processOperatingSystemCommand(options: ArrayList<Any?>): Boolean {
+        val command = optionInt(options, 0)
+        val label = options[1] as String?
 
         // for command > 2 label could be composed (i.e. contain ';'), but we'll leave
         // it to processUnknownOperatingSystemCommand implementations to handle that
         try {
-            switch (command) {
-                default:
+            return when (command) {
+                else -> {
                     // not exactly unknown, but not supported through dedicated process methods
-                    processUnknownOperatingSystemCommand(command, label);
-                    return true;
+                    processUnknownOperatingSystemCommand(command, label)
+                    true
+                }
             }
-        } catch (IllegalArgumentException ignore) {
+        }
+        catch (ignore: IllegalArgumentException) {
+        }
+        return false
+    }
+
+    @Throws(IOException::class)
+    protected open fun processRestoreCursorPosition() {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processSaveCursorPosition() {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processScrollDown(count: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processScrollUp(count: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processEraseScreen(eraseOption: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processEraseLine(eraseOption: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processSetAttribute(attribute: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processSetForegroundColor(color: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processSetBackgroundColor(color: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processDefaultTextColor() {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processDefaultBackgroundColor() {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processAttributeReset() {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processCursorTo(row: Int, col: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processCursorToColumn(x: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processCursorUpLine(count: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processCursorDownLine(count: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processCursorLeft(count: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processCursorRight(count: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processCursorDown(count: Int) {
+    }
+
+    @Throws(IOException::class)
+    protected open fun processCursorUp(count: Int) {
+    }
+
+    protected fun processUnknownExtension(options: ArrayList<Any?>, command: Char) {}
+    protected fun processUnknownOperatingSystemCommand(command: Int, param: String?) {}
+
+    private fun optionInt(options: ArrayList<Any?>, index: Int): Int {
+        require(options.size > index)
+        val value = options[index] ?: throw IllegalArgumentException()
+
+        require(value.javaClass == Int::class.java)
+        return value as Int
+    }
+
+    private fun optionInt(options: ArrayList<Any?>, index: Int, defaultValue: Int): Int {
+        if (options.size > index) {
+            val value = options[index] ?: return defaultValue
+            return value as Int
+        }
+        return defaultValue
+    }
+
+    @Throws(IOException::class)
+    override fun close() {
+        flush()
+        super.close()
+    }
+
+    companion object {
+        private val CHARSET = Charset.forName("UTF-8")
+
+        const val BLACK = 0
+        const val RED = 1
+        const val GREEN = 2
+        const val YELLOW = 3
+        const val BLUE = 4
+        const val MAGENTA = 5
+        const val CYAN = 6
+        const val WHITE = 7
+
+        // Moves the cursor n (default 1) cells in the given direction. If the cursor is already at the edge of the screen, this has no effect.
+        const val CURSOR_UP = 'A'
+        const val CURSOR_DOWN = 'B'
+        const val CURSOR_FORWARD = 'C'
+        const val CURSOR_BACK = 'D'
+        const val CURSOR_DOWN_LINE = 'E' // Moves cursor to beginning of the line n (default 1) lines down.
+        const val CURSOR_UP_LINE = 'F' // Moves cursor to beginning of the line n (default 1) lines up.
+        const val CURSOR_TO_COL = 'G' // Moves the cursor to column n (default 1).
+
+        // Moves the cursor to row n, column m. The values are 1-based, and default to 1 (top left corner) if omitted.
+        const val CURSOR_POS = 'H'
+
+        // Moves the cursor to row n, column m. Both default to 1 if omitted. Same as CUP
+        const val CURSOR_POS_ALT = 'f'
+
+        // Clears part of the screen. If n is 0 (or missing), clear from cursor to end of screen. If n is 1, clear from cursor to beginning of the screen. If n is 2, clear entire screen (and moves cursor to upper left on DOS ANSI.SYS).
+        const val CURSOR_ERASE_SCREEN = 'J'
+
+        // Erases part of the line. If n is zero (or missing), clear from cursor to the end of the line. If n is one, clear from cursor to beginning of the line. If n is two, clear entire line. Cursor position does not change.
+        const val CURSOR_ERASE_LINE = 'K'
+
+        const val SCROLL_UP = 'S' // Scroll whole page up by n (default 1) lines. New lines are added at the bottom. (not ANSI.SYS)
+        const val SCROLL_DOWN = 'T' // Scroll whole page down by n (default 1) lines. New lines are added at the top. (not ANSI.SYS)
+        const val SAVE_CURSOR_POS = 's' // Saves the cursor position.
+        const val RESTORE_CURSOR_POS = 'u' // Restores the cursor position.
+
+        // Sets SGR parameters, including text color. After CSI can be zero or more parameters separated with ;. With no parameters, CSI m is treated as CSI 0 m (reset / normal), which is typical of most of the ANSI escape sequences.
+        const val TEXT_ATTRIBUTE = 'm'
+
+        const val ATTRIBUTE_RESET = 0 // Reset / Normal - all attributes off
+        const val ATTRIBUTE_BOLD = 1 // Intensity: Bold
+        const val ATTRIBUTE_FAINT = 2 // Intensity; Faint (not widely supported)
+        const val ATTRIBUTE_ITALIC = 3 // Italic; (on not widely supported. Sometimes treated as inverse)
+        const val ATTRIBUTE_UNDERLINE = 4 // Underline; Single
+        const val ATTRIBUTE_BLINK_SLOW = 5 // Blink; Slow  less than 150 per minute
+        const val ATTRIBUTE_BLINK_FAST = 6 // Blink; Rapid 150 per minute or more
+        const val ATTRIBUTE_NEGATIVE_ON = 7 // Negative inverse or reverse; swap foreground and background
+        const val ATTRIBUTE_CONCEAL_ON = 8 // Conceal on
+        const val ATTRIBUTE_STRIKETHROUGH_ON = 9 // Crossed-out
+        const val ATTRIBUTE_UNDERLINE_DOUBLE = 21 // Underline; Double not widely supported
+        const val ATTRIBUTE_NORMAL = 22 // Intensity; Normal not bold and not faint
+        const val ATTRIBUTE_ITALIC_OFF = 23 // Not italic
+        const val ATTRIBUTE_UNDERLINE_OFF = 24 // Underline; None
+        const val ATTRIBUTE_BLINK_OFF = 25 // Blink; off
+        const val ATTRIBUTE_NEGATIVE_OFF = 27 // Image; Positive
+        const val ATTRIBUTE_CONCEAL_OFF = 28 // Reveal conceal off
+        const val ATTRIBUTE_STRIKETHROUGH_OFF = 29 // Not crossed out
+        const val ATTRIBUTE_DEFAULT_FG = 39 //  Default text color (foreground)
+        const val ATTRIBUTE_DEFAULT_BG = 49 //  Default background color
+
+        // for Erase Screen/Line
+        const val ERASE_TO_END = 0
+        const val ERASE_TO_BEGINNING = 1
+        const val ERASE_ALL = 2
+
+        private const val MAX_ESCAPE_SEQUENCE_LENGTH = 100
+
+        internal enum class STATE {
+            LOOKING_FOR_FIRST_ESC_CHAR,
+            LOOKING_FOR_SECOND_ESC_CHAR,
+            LOOKING_FOR_NEXT_ARG,
+            LOOKING_FOR_STR_ARG_END,
+            LOOKING_FOR_INT_ARG_END,
+            LOOKING_FOR_OSC_COMMAND,
+            LOOKING_FOR_OSC_COMMAND_END,
+            LOOKING_FOR_OSC_PARAM,
+            LOOKING_FOR_ST
         }
 
-        return false;
-    }
 
-    protected
-    void processRestoreCursorPosition() throws IOException {
-    }
+        private const val FIRST_ESC_CHAR = 27
+        private const val SECOND_ESC_CHAR = '['.code
+        private const val SECOND_OSC_CHAR = ']'.code
+        private const val BEL = 7
+        private const val SECOND_ST_CHAR = '\\'.code
 
-    protected
-    void processSaveCursorPosition() throws IOException {
-    }
-
-    protected
-    void processScrollDown(int optionInt) throws IOException {
-    }
-
-    protected
-    void processScrollUp(int optionInt) throws IOException {
-    }
-
-    protected
-    void processEraseScreen(int eraseOption) throws IOException {
-    }
-
-    protected
-    void processEraseLine(int eraseOption) throws IOException {
-    }
-
-    protected
-    void processSetAttribute(int attribute) throws IOException {
-    }
-
-    protected
-    void processSetForegroundColor(int color) throws IOException {
-    }
-
-    protected
-    void processSetBackgroundColor(int color) throws IOException {
-    }
-
-    protected
-    void processDefaultTextColor() throws IOException {
-    }
-
-    protected
-    void processDefaultBackgroundColor() throws IOException {
-    }
-
-    protected
-    void processAttributeReset() throws IOException {
-    }
-
-    protected
-    void processCursorTo(int row, int col) throws IOException {
-    }
-
-    protected
-    void processCursorToColumn(int x) throws IOException {
-    }
-
-    protected
-    void processCursorUpLine(int count) throws IOException {
-    }
-
-    protected
-    void processCursorDownLine(int count) throws IOException {
-    }
-
-    protected
-    void processCursorLeft(int count) throws IOException {
-    }
-
-    protected
-    void processCursorRight(int count) throws IOException {
-    }
-
-    protected
-    void processCursorDown(int count) throws IOException {
-    }
-
-    protected
-    void processCursorUp(int count) throws IOException {
-    }
-
-    protected
-    void processUnknownExtension(ArrayList<Object> options, int command) {
-    }
-
-    protected
-    void processUnknownOperatingSystemCommand(int command, String param) {
-    }
-
-    private
-    int optionInt(final ArrayList<Object> options, final int index) {
-        if (options.size() <= index) {
-            throw new IllegalArgumentException();
-        }
-        Object value = options.get(index);
-        if (value == null) {
-            throw new IllegalArgumentException();
-        }
-        if (!value.getClass()
-                  .equals(Integer.class)) {
-            throw new IllegalArgumentException();
-        }
-        return (Integer) value;
-    }
-
-    private
-    int optionInt(final ArrayList<Object> options, final int index, final int defaultValue) {
-        if (options.size() > index) {
-            Object value = options.get(index);
-            if (value == null) {
-                return defaultValue;
-            }
-            return (Integer) value;
-        }
-        return defaultValue;
-    }
-
-    @Override
-    public
-    void close() throws IOException {
-        flush();
-        super.close();
+        val RESET_CODE = StringBuilder(3).append(FIRST_ESC_CHAR.toChar()).append(SECOND_ESC_CHAR.toChar()).append(TEXT_ATTRIBUTE).toString()
+            .toByteArray(CHARSET)
     }
 }

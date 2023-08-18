@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,65 +12,24 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
- * Copyright (C) 2009, Progress Software Corporation and/or its
- * subsidiaries or affiliates.  All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a asValue of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
-package dorkbox.console.output;
+package dorkbox.console.output
 
-import static com.sun.jna.platform.win32.WinBase.INVALID_HANDLE_VALUE;
-import static com.sun.jna.platform.win32.WinNT.HANDLE;
-import static com.sun.jna.platform.win32.Wincon.STD_ERROR_HANDLE;
-import static com.sun.jna.platform.win32.Wincon.STD_OUTPUT_HANDLE;
-import static dorkbox.jna.windows.Kernel32.ASSERT;
-import static dorkbox.jna.windows.Kernel32.BACKGROUND_BLACK;
-import static dorkbox.jna.windows.Kernel32.BACKGROUND_BLUE;
-import static dorkbox.jna.windows.Kernel32.BACKGROUND_CYAN;
-import static dorkbox.jna.windows.Kernel32.BACKGROUND_GREEN;
-import static dorkbox.jna.windows.Kernel32.BACKGROUND_GREY;
-import static dorkbox.jna.windows.Kernel32.BACKGROUND_INTENSITY;
-import static dorkbox.jna.windows.Kernel32.BACKGROUND_MAGENTA;
-import static dorkbox.jna.windows.Kernel32.BACKGROUND_RED;
-import static dorkbox.jna.windows.Kernel32.BACKGROUND_YELLOW;
-import static dorkbox.jna.windows.Kernel32.CloseHandle;
-import static dorkbox.jna.windows.Kernel32.FOREGROUND_BLACK;
-import static dorkbox.jna.windows.Kernel32.FOREGROUND_BLUE;
-import static dorkbox.jna.windows.Kernel32.FOREGROUND_CYAN;
-import static dorkbox.jna.windows.Kernel32.FOREGROUND_GREEN;
-import static dorkbox.jna.windows.Kernel32.FOREGROUND_GREY;
-import static dorkbox.jna.windows.Kernel32.FOREGROUND_INTENSITY;
-import static dorkbox.jna.windows.Kernel32.FOREGROUND_MAGENTA;
-import static dorkbox.jna.windows.Kernel32.FOREGROUND_RED;
-import static dorkbox.jna.windows.Kernel32.FOREGROUND_YELLOW;
-import static dorkbox.jna.windows.Kernel32.FillConsoleOutputAttribute;
-import static dorkbox.jna.windows.Kernel32.FillConsoleOutputCharacter;
-import static dorkbox.jna.windows.Kernel32.GetConsoleScreenBufferInfo;
-import static dorkbox.jna.windows.Kernel32.GetStdHandle;
-import static dorkbox.jna.windows.Kernel32.ScrollConsoleScreenBuffer;
-import static dorkbox.jna.windows.Kernel32.SetConsoleCursorPosition;
-import static dorkbox.jna.windows.Kernel32.SetConsoleTextAttribute;
-
-import java.io.IOException;
-import java.io.OutputStream;
-
-import com.sun.jna.ptr.IntByReference;
-
-import dorkbox.jna.windows.structs.CONSOLE_SCREEN_BUFFER_INFO;
-import dorkbox.jna.windows.structs.COORD;
-import dorkbox.jna.windows.structs.SMALL_RECT;
+import com.sun.jna.platform.win32.WinBase
+import com.sun.jna.platform.win32.WinNT
+import com.sun.jna.platform.win32.Wincon
+import com.sun.jna.ptr.IntByReference
+import dorkbox.jna.windows.Kernel32
+import dorkbox.jna.windows.structs.CONSOLE_SCREEN_BUFFER_INFO
+import dorkbox.jna.windows.structs.COORD
+import dorkbox.jna.windows.structs.SMALL_RECT
+import java.io.IOException
+import java.io.OutputStream
+import kotlin.experimental.and
+import kotlin.experimental.inv
+import kotlin.experimental.or
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * A Windows ANSI escape processor, uses JNA direct-mapping to access native platform API's to change the console attributes.
@@ -78,339 +37,378 @@ import dorkbox.jna.windows.structs.SMALL_RECT;
  * See: https://en.wikipedia.org/wiki/ANSI_escape_code
  *
  * @author dorkbox, llc
- * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+ * @author [Hiram Chirino](http://hiramchirino.com)
  * @author Joris Kuipers
  */
-@SuppressWarnings("NumericCastThatLosesPrecision")
-public final class WindowsAnsiOutputStream extends AnsiOutputStream {
-    private static final short ANSI_FOREGROUND_COLOR_MAP[];
-    private static final short ANSI_BACKGROUND_COLOR_MAP[];
+class WindowsAnsiOutputStream internal constructor(os: OutputStream?, fHandle: Int) : AnsiOutputStream(os) {
+    private val console: WinNT.HANDLE?
+    private val originalInfo = CONSOLE_SCREEN_BUFFER_INFO()
+    private val fileHandle: Int
 
-    static {
-        ANSI_FOREGROUND_COLOR_MAP = new short[8];
-        ANSI_FOREGROUND_COLOR_MAP[BLACK] = FOREGROUND_BLACK;
-        ANSI_FOREGROUND_COLOR_MAP[RED] = FOREGROUND_RED;
-        ANSI_FOREGROUND_COLOR_MAP[GREEN] = FOREGROUND_GREEN;
-        ANSI_FOREGROUND_COLOR_MAP[YELLOW] = FOREGROUND_YELLOW;
-        ANSI_FOREGROUND_COLOR_MAP[BLUE] = FOREGROUND_BLUE;
-        ANSI_FOREGROUND_COLOR_MAP[MAGENTA] = FOREGROUND_MAGENTA;
-        ANSI_FOREGROUND_COLOR_MAP[CYAN] = FOREGROUND_CYAN;
-        ANSI_FOREGROUND_COLOR_MAP[WHITE] = FOREGROUND_GREY;
+    private val info = CONSOLE_SCREEN_BUFFER_INFO()
 
-        ANSI_BACKGROUND_COLOR_MAP = new short[8];
-        ANSI_BACKGROUND_COLOR_MAP[BLACK] = BACKGROUND_BLACK;
-        ANSI_BACKGROUND_COLOR_MAP[RED] = BACKGROUND_RED;
-        ANSI_BACKGROUND_COLOR_MAP[GREEN] = BACKGROUND_GREEN;
-        ANSI_BACKGROUND_COLOR_MAP[YELLOW] = BACKGROUND_YELLOW;
-        ANSI_BACKGROUND_COLOR_MAP[BLUE] = BACKGROUND_BLUE;
-        ANSI_BACKGROUND_COLOR_MAP[MAGENTA] = BACKGROUND_MAGENTA;
-        ANSI_BACKGROUND_COLOR_MAP[CYAN] = BACKGROUND_CYAN;
-        ANSI_BACKGROUND_COLOR_MAP[WHITE] = BACKGROUND_GREY;
-    }
+    @Volatile
+    private var negative = false
 
-    private final HANDLE console;
-    private CONSOLE_SCREEN_BUFFER_INFO originalInfo = new CONSOLE_SCREEN_BUFFER_INFO();
-    private volatile CONSOLE_SCREEN_BUFFER_INFO info = new CONSOLE_SCREEN_BUFFER_INFO();
+    @Volatile
+    private var savedX = (-1).toShort()
 
-    private volatile boolean negative;
-    private volatile short savedX = (short) -1;
-    private volatile short savedY = (short) -1;
+    @Volatile
+    private var savedY = (-1).toShort()
 
     // reused vars
-    private IntByReference written = new IntByReference();
+    private val written = IntByReference()
 
-    WindowsAnsiOutputStream(final OutputStream os, int fileHandle) throws IOException {
-        super(os);
-
-        if (fileHandle == 1) { // STDOUT_FILENO
-            fileHandle = STD_OUTPUT_HANDLE;
-        } else if (fileHandle == 2) { // STDERR_FILENO
-            fileHandle = STD_ERROR_HANDLE;
-        } else {
-            throw new IllegalArgumentException("Invalid file handle " + fileHandle);
+    init {
+        fileHandle = if (fHandle == 1) { // STDOUT_FILENO
+            Wincon.STD_OUTPUT_HANDLE
+        }
+        else if (fHandle == 2) { // STDERR_FILENO
+            Wincon.STD_ERROR_HANDLE
+        }
+        else {
+            throw IllegalArgumentException("Invalid file handle $fHandle")
         }
 
-        console = GetStdHandle(fileHandle);
-        if (console == INVALID_HANDLE_VALUE) {
-            throw new IOException("Unable to get input console handle.");
-        }
 
-        out.flush();
-        if (GetConsoleScreenBufferInfo(console, originalInfo) == 0) {
-            throw new IOException("Could not get the screen info");
+        console = Kernel32.GetStdHandle(fileHandle)
+        if (console === WinBase.INVALID_HANDLE_VALUE) {
+            throw IOException("Unable to get input console handle.")
+        }
+        out.flush()
+        if (Kernel32.GetConsoleScreenBufferInfo(console, originalInfo) == 0) {
+            throw IOException("Could not get the screen info")
         }
     }
 
-    private
-    void getConsoleInfo() throws IOException {
-        out.flush();
-        ASSERT(GetConsoleScreenBufferInfo(console, info), "Could not get the screen info:");
-    }
+    @get:Throws(IOException::class)
+    private val consoleInfo: Unit
+        private get() {
+            out.flush()
+            Kernel32.ASSERT(Kernel32.GetConsoleScreenBufferInfo(console, info), "Could not get the screen info:")
+        }
 
-    private
-    void applyAttributes() throws IOException {
-        out.flush();
+    @Throws(IOException::class)
+    private fun applyAttributes() {
+        out.flush()
 
-        short attributes = info.attributes;
+        var attributes = info.attributes
         if (negative) {
             // Swap the the Foreground and Background bits.
-            int fg = 0x000F & attributes;
-            fg <<= 8;
-            int bg = 0X00F0 * attributes;
-            bg >>= 8;
-            attributes = (short) (attributes & 0xFF00 | fg | bg);
+            var fg = 0x000F and attributes.toInt()
+            fg = fg shl 8
+            var bg = 0X00F0 * attributes
+            bg = bg shr 8
+            attributes = (attributes.toInt() and 0xFF00 or fg or bg).toShort()
         }
-
-        ASSERT(SetConsoleTextAttribute(console, attributes), "Could not set text attributes");
+        Kernel32.ASSERT(Kernel32.SetConsoleTextAttribute(console, attributes), "Could not set text attributes")
     }
 
-    private
-    void applyCursorPosition() throws IOException {
-        ASSERT(SetConsoleCursorPosition(console, info.cursorPosition.asValue()), "Could not set cursor position");
+    @Throws(IOException::class)
+    private fun applyCursorPosition() {
+        Kernel32.ASSERT(Kernel32.SetConsoleCursorPosition(console, info.cursorPosition.asValue()), "Could not set cursor position")
     }
 
-    @Override
-    protected
-    void processRestoreCursorPosition() throws IOException {
+    @Throws(IOException::class)
+    override fun processRestoreCursorPosition() {
         // restore only if there was a save operation first
-        if (savedX != -1 && savedY != -1) {
-            out.flush();
-            info.cursorPosition.x = savedX;
-            info.cursorPosition.y = savedY;
-            applyCursorPosition();
+        if (savedX.toInt() != -1 && savedY.toInt() != -1) {
+            out.flush()
+            info.cursorPosition.x = savedX
+            info.cursorPosition.y = savedY
+            applyCursorPosition()
         }
     }
 
-    @Override
-    protected
-    void processSaveCursorPosition() throws IOException {
-        getConsoleInfo();
-        savedX = info.cursorPosition.x;
-        savedY = info.cursorPosition.y;
+    @Throws(IOException::class)
+    override fun processSaveCursorPosition() {
+        consoleInfo
+        savedX = info.cursorPosition.x
+        savedY = info.cursorPosition.y
     }
 
-    @Override
-    protected
-    void processEraseScreen(final int eraseOption) throws IOException {
-        getConsoleInfo();
+    @Throws(IOException::class)
+    override fun processEraseScreen(eraseOption: Int) {
+        consoleInfo
+        when (eraseOption) {
+            ERASE_ALL          -> {
+                val topLeft = COORD()
+                topLeft.x = 0.toShort()
+                topLeft.y = info.window.top
 
-        switch (eraseOption) {
-            case ERASE_ALL:
-                COORD topLeft = new COORD();
-                topLeft.x = (short) 0;
-                topLeft.y = info.window.top;
-                int screenLength = info.window.height() * info.size.x;
+                val screenLength = info.window.height() * info.size.x
+                Kernel32.ASSERT(
+                    Kernel32.FillConsoleOutputAttribute(
+                        console,
+                        originalInfo.attributes,
+                        screenLength,
+                        topLeft.asValue(),
+                        written
+                    ), "Could not fill console"
+                )
+                Kernel32.ASSERT(
+                    Kernel32.FillConsoleOutputCharacter(console, ' ', screenLength, topLeft.asValue(), written),
+                    "Could not fill console"
+                )
+            }
 
-                ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, screenLength, topLeft.asValue(), written), "Could not fill console");
-                ASSERT(FillConsoleOutputCharacter(console, ' ', screenLength, topLeft.asValue(), written), "Could not fill console");
-                break;
-            case ERASE_TO_BEGINNING:
-                COORD topLeft2 = new COORD();
-                topLeft2.x = (short) 0;
-                topLeft2.y = info.window.top;
-                int lengthToCursor = (info.cursorPosition.y - info.window.top) * info.size.x + info.cursorPosition.x;
+            ERASE_TO_BEGINNING -> {
+                val topLeft2 = COORD()
+                topLeft2.x = 0.toShort()
+                topLeft2.y = info.window.top
 
-                ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, lengthToCursor, topLeft2.asValue(), written), "Could not fill console");
-                ASSERT(FillConsoleOutputCharacter(console, ' ', lengthToCursor, topLeft2.asValue(), written), "Could not fill console");
-                break;
-            case ERASE_TO_END:
-                int lengthToEnd = (info.window.bottom - info.cursorPosition.y) * info.size.x + info.size.x - info.cursorPosition.x;
+                val lengthToCursor = (info.cursorPosition.y - info.window.top) * info.size.x + info.cursorPosition.x
+                Kernel32.ASSERT(
+                    Kernel32.FillConsoleOutputAttribute(
+                        console,
+                        originalInfo.attributes,
+                        lengthToCursor,
+                        topLeft2.asValue(),
+                        written
+                    ), "Could not fill console"
+                )
+                Kernel32.ASSERT(
+                    Kernel32.FillConsoleOutputCharacter(console, ' ', lengthToCursor, topLeft2.asValue(), written),
+                    "Could not fill console"
+                )
+            }
 
-                ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, lengthToEnd, info.cursorPosition.asValue(), written), "Could not fill console");
-                ASSERT(FillConsoleOutputCharacter(console, ' ', lengthToEnd, info.cursorPosition.asValue(), written), "Could not fill console");
+            ERASE_TO_END       -> {
+                val lengthToEnd = (info.window.bottom - info.cursorPosition.y) * info.size.x + info.size.x - info.cursorPosition.x
+                Kernel32.ASSERT(
+                    Kernel32.FillConsoleOutputAttribute(
+                        console,
+                        originalInfo.attributes,
+                        lengthToEnd,
+                        info.cursorPosition.asValue(),
+                        written
+                    ), "Could not fill console"
+                )
+                Kernel32.ASSERT(
+                    Kernel32.FillConsoleOutputCharacter(console, ' ', lengthToEnd, info.cursorPosition.asValue(), written),
+                    "Could not fill console"
+                )
+            }
         }
     }
 
-    @Override
-    protected
-    void processEraseLine(final int eraseOption) throws IOException {
-        getConsoleInfo();
+    @Throws(IOException::class)
+    override fun processEraseLine(eraseOption: Int) {
+        consoleInfo
+        when (eraseOption) {
+            ERASE_ALL          -> {
+                val currentRow: COORD = info.cursorPosition.asValue()
+                currentRow.x = 0.toShort()
 
-        switch (eraseOption) {
-            case ERASE_ALL:
-                COORD currentRow = info.cursorPosition.asValue();
-                currentRow.x = (short) 0;
+                Kernel32.ASSERT(
+                    Kernel32.FillConsoleOutputAttribute(
+                        console,
+                        originalInfo.attributes,
+                        info.size.x.toInt(),
+                        currentRow.asValue(),
+                        written
+                    ), "Could not fill console"
+                )
+                Kernel32.ASSERT(
+                    Kernel32.FillConsoleOutputCharacter(console, ' ', info.size.x.toInt(), currentRow.asValue(), written),
+                    "Could not fill console"
+                )
+            }
 
-                ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, info.size.x, currentRow.asValue(), written), "Could not fill console");
-                ASSERT(FillConsoleOutputCharacter(console, ' ', info.size.x, currentRow.asValue(), written), "Could not fill console");
-                break;
-            case ERASE_TO_BEGINNING:
-                COORD leftColCurrRow2 = info.cursorPosition.asValue();
-                leftColCurrRow2.x = (short) 0;
+            ERASE_TO_BEGINNING -> {
+                val leftColCurrRow2: COORD = info.cursorPosition.asValue()
+                leftColCurrRow2.x = 0.toShort()
 
-                ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, info.cursorPosition.x, leftColCurrRow2.asValue(), written), "Could not fill console");
-                ASSERT(FillConsoleOutputCharacter(console, ' ', info.cursorPosition.x, leftColCurrRow2.asValue(), written), "Could not fill console");
-                break;
-            case ERASE_TO_END:
-                int lengthToLastCol = info.size.x - info.cursorPosition.x;
+                Kernel32.ASSERT(
+                    Kernel32.FillConsoleOutputAttribute(
+                        console,
+                        originalInfo.attributes,
+                        info.cursorPosition.x.toInt(),
+                        leftColCurrRow2.asValue(),
+                        written
+                    ), "Could not fill console"
+                )
+                Kernel32.ASSERT(
+                    Kernel32.FillConsoleOutputCharacter(
+                        console,
+                        ' ',
+                        info.cursorPosition.x.toInt(),
+                        leftColCurrRow2.asValue(),
+                        written
+                    ), "Could not fill console"
+                )
+            }
 
-                ASSERT(FillConsoleOutputAttribute(console, originalInfo.attributes, lengthToLastCol, info.cursorPosition.asValue(), written), "Could not fill console");
-                ASSERT(FillConsoleOutputCharacter(console, ' ', lengthToLastCol, info.cursorPosition.asValue(), written), "Could not fill console");
+            ERASE_TO_END       -> {
+                val lengthToLastCol = info.size.x - info.cursorPosition.x
+
+                Kernel32.ASSERT(
+                    Kernel32.FillConsoleOutputAttribute(
+                        console,
+                        originalInfo.attributes,
+                        lengthToLastCol,
+                        info.cursorPosition.asValue(),
+                        written
+                    ), "Could not fill console"
+                )
+                Kernel32.ASSERT(
+                    Kernel32.FillConsoleOutputCharacter(console, ' ', lengthToLastCol, info.cursorPosition.asValue(), written),
+                    "Could not fill console"
+                )
+            }
         }
     }
 
-    @Override
-    protected
-    void processSetAttribute(final int attribute) throws IOException {
+    @Throws(IOException::class)
+    override fun processSetAttribute(attribute: Int) {
         if (90 <= attribute && attribute <= 97) {
             // foreground bright
-            info.attributes = (short) (info.attributes & ~0x000F | ANSI_FOREGROUND_COLOR_MAP[attribute - 90]);
-            info.attributes = (short) (info.attributes | FOREGROUND_INTENSITY);
-            applyAttributes();
-            return;
-        } else if (100 <= attribute && attribute <= 107) {
+            info.attributes = (info.attributes.toInt() and 0x000F.inv() or ANSI_FOREGROUND_COLOR_MAP[attribute - 90].toInt()).toShort()
+            info.attributes = (info.attributes or Kernel32.FOREGROUND_INTENSITY)
+            applyAttributes()
+            return
+        }
+        else if (100 <= attribute && attribute <= 107) {
             // background bright
-            info.attributes = (short) (info.attributes & ~0x00F0 | ANSI_BACKGROUND_COLOR_MAP[attribute - 100]);
-            info.attributes = (short) (info.attributes | BACKGROUND_INTENSITY);
-            applyAttributes();
-            return;
+            info.attributes = (info.attributes.toInt() and 0x00F0.inv() or ANSI_BACKGROUND_COLOR_MAP[attribute - 100].toInt()).toShort()
+            info.attributes = (info.attributes or Kernel32.BACKGROUND_INTENSITY)
+            applyAttributes()
+            return
         }
 
-        switch (attribute) {
-            case ATTRIBUTE_BOLD:
-                info.attributes = (short) (info.attributes | FOREGROUND_INTENSITY);
-                applyAttributes();
-                break;
-            case ATTRIBUTE_NORMAL:
-                info.attributes = (short) (info.attributes & ~FOREGROUND_INTENSITY);
-                applyAttributes();
-                break;
+        when (attribute) {
+            ATTRIBUTE_BOLD          -> {
+                info.attributes = (info.attributes or Kernel32.FOREGROUND_INTENSITY)
+                applyAttributes()
+            }
 
-            // Yeah, setting the background intensity is not underlining.. but it's best we can do using the Windows console API
-            case ATTRIBUTE_UNDERLINE:
-                info.attributes = (short) (info.attributes | BACKGROUND_INTENSITY);
-                applyAttributes();
-                break;
-            case ATTRIBUTE_UNDERLINE_OFF:
-                info.attributes = (short) (info.attributes & ~BACKGROUND_INTENSITY);
-                applyAttributes();
-                break;
+            ATTRIBUTE_NORMAL        -> {
+                info.attributes = (info.attributes and Kernel32.FOREGROUND_INTENSITY.inv())
+                applyAttributes()
+            }
 
-            case ATTRIBUTE_NEGATIVE_ON:
-                negative = true;
-                applyAttributes();
-                break;
-            case ATTRIBUTE_NEGATIVE_OFF:
-                negative = false;
-                applyAttributes();
-                break;
+            ATTRIBUTE_UNDERLINE     -> {
+                info.attributes = (info.attributes or Kernel32.BACKGROUND_INTENSITY)
+                applyAttributes()
+            }
+
+            ATTRIBUTE_UNDERLINE_OFF -> {
+                info.attributes = (info.attributes and Kernel32.BACKGROUND_INTENSITY.inv())
+                applyAttributes()
+            }
+
+            ATTRIBUTE_NEGATIVE_ON   -> {
+                negative = true
+                applyAttributes()
+            }
+
+            ATTRIBUTE_NEGATIVE_OFF  -> {
+                negative = false
+                applyAttributes()
+            }
         }
     }
 
-    @Override
-    protected
-    void processSetForegroundColor(final int color) throws IOException {
-        info.attributes = (short) (info.attributes & ~0x000F | ANSI_FOREGROUND_COLOR_MAP[color]);
-        applyAttributes();
+    @Throws(IOException::class)
+    override fun processSetForegroundColor(color: Int) {
+        info.attributes = (info.attributes.toInt() and 0x000F.inv() or ANSI_FOREGROUND_COLOR_MAP[color].toInt()).toShort()
+        applyAttributes()
     }
 
-    @Override
-    protected
-    void processSetBackgroundColor(final int color) throws IOException {
-        info.attributes = (short) (info.attributes & ~0x00F0 | ANSI_BACKGROUND_COLOR_MAP[color]);
-        applyAttributes();
+    @Throws(IOException::class)
+    override fun processSetBackgroundColor(color: Int) {
+        info.attributes = (info.attributes.toInt() and 0x00F0.inv() or ANSI_BACKGROUND_COLOR_MAP[color].toInt()).toShort()
+        applyAttributes()
     }
 
-    @Override
-    protected
-    void processDefaultTextColor() throws IOException {
-        info.attributes = (short) (info.attributes & ~0x000F | originalInfo.attributes & 0x000F);
-        applyAttributes();
+    @Throws(IOException::class)
+    override fun processDefaultTextColor() {
+        info.attributes = (info.attributes.toInt() and 0x000F.inv() or (originalInfo.attributes.toInt() and 0x000F)).toShort()
+        applyAttributes()
     }
 
-    @Override
-    protected
-    void processDefaultBackgroundColor() throws IOException {
-        info.attributes = (short) (info.attributes & ~0x00F0 | originalInfo.attributes & 0x00F0);
-        applyAttributes();
+    @Throws(IOException::class)
+    override fun processDefaultBackgroundColor() {
+        info.attributes = (info.attributes.toInt() and 0x00F0.inv() or (originalInfo.attributes.toInt() and 0x00F0)).toShort()
+        applyAttributes()
     }
 
-    @Override
-    protected
-    void processAttributeReset() throws IOException {
+    @Throws(IOException::class)
+    override fun processAttributeReset() {
         //info.attributes = originalInfo.attributes;
-        info.attributes = (short)((info.attributes & ~0x00FF ) | originalInfo.attributes);
-        this.negative = false;
-        applyAttributes();
+        info.attributes = (info.attributes.toInt() and 0x00FF.inv() or originalInfo.attributes.toInt()).toShort()
+        negative = false
+        applyAttributes()
     }
 
-    @Override
-    protected
-    void processScrollDown(final int count) throws IOException {
-        scroll((short) -count);
+    @Throws(IOException::class)
+    override fun processScrollDown(count: Int) {
+        scroll((-count).toShort())
     }
 
-    @Override
-    protected
-    void processScrollUp(final int count) throws IOException {
-        scroll((short) count);
+    @Throws(IOException::class)
+    override fun processScrollUp(count: Int) {
+        scroll(count.toShort())
     }
 
-    @Override
-    protected
-    void processCursorUpLine(final int count) throws IOException {
-        getConsoleInfo();
-        info.cursorPosition.y = (short) Math.max(info.window.top, info.cursorPosition.y - count);
-        info.cursorPosition.x = (short) 0;
-        applyCursorPosition();
+    @Throws(IOException::class)
+    override fun processCursorUpLine(count: Int) {
+        consoleInfo
+        info.cursorPosition.y = max(info.window.top.toDouble(), (info.cursorPosition.y - count).toDouble()).toInt().toShort()
+        info.cursorPosition.x = 0.toShort()
+        applyCursorPosition()
     }
 
-    @Override
-    protected
-    void processCursorDownLine(final int count) throws IOException {
-        getConsoleInfo();
-        info.cursorPosition.y = (short) Math.max(info.window.top, info.cursorPosition.y + count);
-        info.cursorPosition.x = (short) 0;
-        applyCursorPosition();
+    @Throws(IOException::class)
+    override fun processCursorDownLine(count: Int) {
+        consoleInfo
+        info.cursorPosition.y = max(info.window.top.toDouble(), (info.cursorPosition.y + count).toDouble()).toInt().toShort()
+        info.cursorPosition.x = 0.toShort()
+        applyCursorPosition()
     }
 
-    @Override
-    protected
-    void processCursorTo(final int row, final int col) throws IOException {
-        getConsoleInfo();
-        info.cursorPosition.y = (short) Math.max(info.window.top, Math.min(info.size.y, info.window.top + row - 1));
-        info.cursorPosition.x = (short) Math.max(0, Math.min(info.window.width(), col - 1));
-        applyCursorPosition();
+    @Throws(IOException::class)
+    override fun processCursorTo(row: Int, col: Int) {
+        consoleInfo
+        info.cursorPosition.y =
+            max(info.window.top.toDouble(), min(info.size.y.toDouble(), (info.window.top + row - 1).toDouble())).toInt().toShort()
+        info.cursorPosition.x = max(0.0, min(info.window.width().toDouble(), (col - 1).toDouble())).toInt().toShort()
+        applyCursorPosition()
     }
 
-    @Override
-    protected
-    void processCursorToColumn(final int x) throws IOException {
-        getConsoleInfo();
-        info.cursorPosition.x = (short) Math.max(0, Math.min(info.window.width(), x - 1));
-        applyCursorPosition();
+    @Throws(IOException::class)
+    override fun processCursorToColumn(x: Int) {
+        consoleInfo
+        info.cursorPosition.x = max(0.0, min(info.window.width().toDouble(), (x - 1).toDouble())).toInt().toShort()
+        applyCursorPosition()
     }
 
-    @Override
-    protected
-    void processCursorLeft(final int count) throws IOException {
-        getConsoleInfo();
-        info.cursorPosition.x = (short) Math.max(0, info.cursorPosition.x - count);
-        applyCursorPosition();
+    @Throws(IOException::class)
+    override fun processCursorLeft(count: Int) {
+        consoleInfo
+        info.cursorPosition.x = max(0.0, (info.cursorPosition.x - count).toDouble()).toInt().toShort()
+        applyCursorPosition()
     }
 
-    @Override
-    protected
-    void processCursorRight(final int count) throws IOException {
-        getConsoleInfo();
-        info.cursorPosition.x = (short) Math.min(info.window.width(), info.cursorPosition.x + count);
-        applyCursorPosition();
+    @Throws(IOException::class)
+    override fun processCursorRight(count: Int) {
+        consoleInfo
+        info.cursorPosition.x = min(info.window.width().toDouble(), (info.cursorPosition.x + count).toDouble()).toInt().toShort()
+        applyCursorPosition()
     }
 
-    @Override
-    protected
-    void processCursorDown(final int count) throws IOException {
-        getConsoleInfo();
-        info.cursorPosition.y = (short) Math.min(info.size.y, info.cursorPosition.y + count);
-        applyCursorPosition();
+    @Throws(IOException::class)
+    override fun processCursorDown(count: Int) {
+        consoleInfo
+        info.cursorPosition.y = min(info.size.y.toDouble(), (info.cursorPosition.y + count).toDouble()).toInt().toShort()
+        applyCursorPosition()
     }
 
-    @Override
-    protected
-    void processCursorUp(final int count) throws IOException {
-        getConsoleInfo();
-        info.cursorPosition.y = (short) Math.max(info.window.top, info.cursorPosition.y - count);
-        applyCursorPosition();
+    @Throws(IOException::class)
+    override fun processCursorUp(count: Int) {
+        consoleInfo
+        info.cursorPosition.y = max(info.window.top.toDouble(), (info.cursorPosition.y - count).toDouble()).toInt().toShort()
+        applyCursorPosition()
     }
 
     /**
@@ -418,49 +416,73 @@ public final class WindowsAnsiOutputStream extends AnsiOutputStream {
      *
      * @param rowsToScroll negative to go down, positive to go up.
      *
-     *                     Scroll up and new lines are added at the bottom, scroll down and new lines are added at the
-     *                     top (per the definition).
+     * Scroll up and new lines are added at the bottom, scroll down and new lines are added at the
+     * top (per the definition).
      *
-     *                     Windows doesn't EXACTLY do this, since it will use whatever content is still on the buffer
-     *                     and show THAT instead of blank lines. If the content is moved enough so that it runs OFF the
-     *                     buffer, blank lines will be shown.
+     * Windows doesn't EXACTLY do this, since it will use whatever content is still on the buffer
+     * and show THAT instead of blank lines. If the content is moved enough so that it runs OFF the
+     * buffer, blank lines will be shown.
      */
-    @SuppressWarnings("RedundantCast")
-    private void scroll(short rowsToScroll) throws IOException {
-        if (rowsToScroll == 0) {
-            return;
+    @Throws(IOException::class)
+    private fun scroll(rowsToScroll: Short) {
+        if (rowsToScroll.toInt() == 0) {
+            return
         }
 
         // Get the current screen buffer window position.
-        getConsoleInfo();
-
-        SMALL_RECT.ByReference scrollRect = new SMALL_RECT.ByReference();
-        COORD.ByValue coordDest = new COORD.ByValue();
+        consoleInfo
+        val scrollRect = SMALL_RECT.ByReference()
+        val coordDest = COORD.ByValue()
 
         // the content that will be scrolled (just what is visible in the window)
-        scrollRect.top = (short) (info.cursorPosition.y - info.window.height());
-        scrollRect.bottom = (short) (info.cursorPosition.y);
-        scrollRect.left = (short) 0;
-        scrollRect.right = (short) (info.size.x - 1);
+        scrollRect.top = (info.cursorPosition.y - info.window.height()).toShort()
+        scrollRect.bottom = info.cursorPosition.y
+        scrollRect.left = 0.toShort()
+        scrollRect.right = (info.size.x - 1).toShort()
 
         // The destination for the scroll rectangle is xxx row up/down.
-        coordDest.x = (short) 0;
-        coordDest.y = (short) (scrollRect.top - rowsToScroll);
+        coordDest.x = 0.toShort()
+        coordDest.y = (scrollRect.top - rowsToScroll).toShort()
 
         // fill the space with whatever color was already there with spaces
-        IntByReference attribs = written;
-        attribs.setValue(info.attributes);
+        val attribs = written
+        attribs.value = info.attributes.toInt()
 
         // The clipping rectangle is the same as the scrolling rectangle, so we pass NULL
-        ASSERT(ScrollConsoleScreenBuffer(console, scrollRect, null, coordDest, attribs), "Could not scroll console");
+        Kernel32.ASSERT(Kernel32.ScrollConsoleScreenBuffer(console, scrollRect, null, coordDest, attribs), "Could not scroll console")
     }
 
-    @Override
-    public void close() throws IOException {
-        super.close();
-
+    @Throws(IOException::class)
+    override fun close() {
+        super.close()
         if (console != null) {
-            CloseHandle(console);
+            Kernel32.CloseHandle(console)
+        }
+    }
+
+    companion object {
+        private val ANSI_FOREGROUND_COLOR_MAP: ShortArray
+        private val ANSI_BACKGROUND_COLOR_MAP: ShortArray
+
+        init {
+            ANSI_FOREGROUND_COLOR_MAP = ShortArray(8)
+            ANSI_FOREGROUND_COLOR_MAP[BLACK] = Kernel32.FOREGROUND_BLACK
+            ANSI_FOREGROUND_COLOR_MAP[RED] = Kernel32.FOREGROUND_RED
+            ANSI_FOREGROUND_COLOR_MAP[GREEN] = Kernel32.FOREGROUND_GREEN
+            ANSI_FOREGROUND_COLOR_MAP[YELLOW] = Kernel32.FOREGROUND_YELLOW
+            ANSI_FOREGROUND_COLOR_MAP[BLUE] = Kernel32.FOREGROUND_BLUE
+            ANSI_FOREGROUND_COLOR_MAP[MAGENTA] = Kernel32.FOREGROUND_MAGENTA
+            ANSI_FOREGROUND_COLOR_MAP[CYAN] = Kernel32.FOREGROUND_CYAN
+            ANSI_FOREGROUND_COLOR_MAP[WHITE] = Kernel32.FOREGROUND_GREY
+            ANSI_BACKGROUND_COLOR_MAP = ShortArray(8)
+            ANSI_BACKGROUND_COLOR_MAP[BLACK] = Kernel32.BACKGROUND_BLACK
+            ANSI_BACKGROUND_COLOR_MAP[RED] = Kernel32.BACKGROUND_RED
+            ANSI_BACKGROUND_COLOR_MAP[GREEN] = Kernel32.BACKGROUND_GREEN
+            ANSI_BACKGROUND_COLOR_MAP[YELLOW] = Kernel32.BACKGROUND_YELLOW
+            ANSI_BACKGROUND_COLOR_MAP[BLUE] = Kernel32.BACKGROUND_BLUE
+            ANSI_BACKGROUND_COLOR_MAP[MAGENTA] = Kernel32.BACKGROUND_MAGENTA
+            ANSI_BACKGROUND_COLOR_MAP[CYAN] = Kernel32.BACKGROUND_CYAN
+            ANSI_BACKGROUND_COLOR_MAP[WHITE] = Kernel32.BACKGROUND_GREY
         }
     }
 }

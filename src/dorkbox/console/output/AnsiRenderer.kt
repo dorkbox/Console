@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,190 +12,156 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
- * Copyright (C) 2009 the original author(s).
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
-package dorkbox.console.output;
-
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+package dorkbox.console.output
 
 /**
  * Renders ANSI color escape-codes in strings by parsing out some special syntax to pick up the correct fluff to use.
- * <p>
- * <p/>
+ *
+ *
  * The syntax for embedded ANSI codes is:
- * <p>
- * <pre>
- *   <tt>@|</tt><em>code</em>(<tt>,</tt><em>code</em>)* <em>text</em><tt>|@</tt>
- * </pre>
- * <p>
+ *
+ * ```
+ * @|*code*(,*code*)* *text*|@
+ *
  * Examples:
- * <p>
- * <pre>
- *   <tt>@|bold Hello|@</tt>
- * </pre>
- * <p>
- * <pre>
- *   <tt>@|bold,red Warning!|@</tt>
- * </pre>
+ *
+ * @|bold Hello|@
+ * @|bold,red Warning!|@
+ * ```
  * For Colors, FG_x and BG_x are supported, as are BRIGHT_x (and consequently, FG_BRIGHT_x)
  *
  * @author dorkbox, llc
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
- * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+ * @author [Jason Dillon](mailto:jason@planet57.com)
+ * @author [Hiram Chirino](http://hiramchirino.com)
  */
-@SuppressWarnings("WeakerAccess")
-public
-class AnsiRenderer {
-    public static final String BEGIN_TOKEN = "@|";
-    public static final String CODE_LIST_SEPARATOR = ",";
-    public static final String CODE_TEXT_SEPARATOR = " ";
-    public static final String END_TOKEN = "|@";
+object AnsiRenderer {
+    private val regex = "\\s".toRegex()
 
-    private static final int BEGIN_TOKEN_LEN = 2;
-    private static final int END_TOKEN_LEN = 2;
+    const val BEGIN_TOKEN = "@|"
+    const val CODE_LIST_SEPARATOR = ","
+    const val CODE_TEXT_SEPARATOR = " "
+    const val END_TOKEN = "|@"
 
-    private static Map<String, AnsiCodeMap> codeMap = new HashMap<String, AnsiCodeMap>(32);
+    private val regex1 = CODE_TEXT_SEPARATOR.toRegex()
+    private val regex2 = CODE_LIST_SEPARATOR.toRegex()
 
-    static {
+    private const val BEGIN_TOKEN_LEN = 2
+    private const val END_TOKEN_LEN = 2
+
+    private val codeMap: MutableMap<String, AnsiCodeMap> = HashMap(32)
+
+    init {
         // have to make sure that all the different categories are added to our map.
-        Color red = Color.RED;
-        Attribute bold = Attribute.BOLD;
+        val red = Color.RED
+        val bold = Attribute.BOLD
     }
 
-    static
-    void reg(Enum anEnum, String codeName) {
-        reg(anEnum, codeName, false);
-    }
-
-    static
-    void reg(Enum anEnum, String codeName, boolean isBackgroundColor) {
-        codeMap.put(codeName, new AnsiCodeMap(anEnum, isBackgroundColor));
+    fun reg(anEnum: Enum<*>, codeName: String, isBackgroundColor: Boolean = false) {
+        codeMap[codeName] = AnsiCodeMap(anEnum, isBackgroundColor)
     }
 
     /**
-     * Renders {@link AnsiCodeMap} names on the given Ansi.
+     * Renders [AnsiCodeMap] names on the given Ansi.
      *
      * @param ansi The Ansi to render upon
      * @param codeNames The code names to render
      */
-    public static
-    Ansi render(Ansi ansi, final String... codeNames) {
-        for (String codeName : codeNames) {
-            render(ansi, codeName);
+    fun render(ansi: Ansi, vararg codeNames: String): Ansi {
+        for (codeName in codeNames) {
+            render(ansi, codeName)
         }
-        return ansi;
+        return ansi
     }
 
     /**
-     * Renders a {@link AnsiCodeMap} name on the given Ansi.
+     * Renders a [AnsiCodeMap] name on the given Ansi.
      *
      * @param ansi The Ansi to render upon
      * @param codeName The code name to render
      */
-    public static
-    Ansi render(Ansi ansi, String codeName) {
-        AnsiCodeMap ansiCodeMap = codeMap.get(codeName.toUpperCase(Locale.ENGLISH));
-        assert ansiCodeMap != null : "Invalid ANSI code name: '" + codeName + "'";
+    fun render(ansi: Ansi, codeName: String): Ansi {
+        var ansi = ansi
 
-        if (ansiCodeMap.isColor()) {
-            if (ansiCodeMap.isBackgroundColor()) {
-                ansi = ansi.bg(ansiCodeMap.getColor());
+        val ansiCodeMap = codeMap[codeName.uppercase()] ?: error("Invalid ANSI code name: '$codeName'")
+        if (ansiCodeMap.isColor) {
+            ansi = if (ansiCodeMap.isBackgroundColor) {
+                ansi.bg(ansiCodeMap.color)
             }
             else {
-                ansi = ansi.fg(ansiCodeMap.getColor());
+                ansi.fg(ansiCodeMap.color)
             }
         }
-        else if (ansiCodeMap.isAttribute()) {
-            ansi = ansi.a(ansiCodeMap.getAttribute());
-        } else {
-            assert false : "Undetermined ANSI code name: '" + codeName + "'";
+        else if (ansiCodeMap.isAttribute) {
+            ansi = ansi.a(ansiCodeMap.attribute)
         }
-
-        return ansi;
+        else {
+            assert(false) { "Undetermined ANSI code name: '$codeName'" }
+        }
+        return ansi
     }
 
     /**
-     * Renders text using the {@link AnsiCodeMap} names.
+     * Renders text using the [AnsiCodeMap] names.
      *
      * @param text The text to render
      * @param codeNames The code names to render
      */
-    public static
-    String render(final String text, final String... codeNames) {
-        Ansi ansi = render(Ansi.ansi(), codeNames);
-        return ansi.a(text)
-                   .reset()
-                   .toString();
+    fun render(text: String, vararg codeNames: String): String {
+        val ansi: Ansi = render(Ansi.ansi(), *codeNames)
+        return ansi.a(text).reset().toString()
     }
 
-    public static
-    String render(final String input) throws IllegalArgumentException {
-        StringBuilder buff = new StringBuilder();
-
-        int i = 0;
-        int j, k;
-
+    @Throws(IllegalArgumentException::class)
+    fun render(input: String): String {
+        val buff = StringBuilder()
+        var i = 0
+        var j: Int
+        var k: Int
         while (true) {
-            j = input.indexOf(BEGIN_TOKEN, i);
+            j = input.indexOf(BEGIN_TOKEN, i)
             if (j == -1) {
-                if (i == 0) {
-                    return input;
+                return if (i == 0) {
+                    input
                 }
                 else {
-                    buff.append(input.substring(i, input.length()));
-                    return buff.toString();
+                    buff.append(input.substring(i, input.length))
+                    buff.toString()
                 }
             }
             else {
-                buff.append(input.substring(i, j));
-                k = input.indexOf(END_TOKEN, j);
-
+                buff.append(input.substring(i, j))
+                k = input.indexOf(END_TOKEN, j)
                 if (k == -1) {
-                    return input;
+                    return input
                 }
                 else {
-                    j += BEGIN_TOKEN_LEN;
-                    String spec = input.substring(j, k);
+                    j += BEGIN_TOKEN_LEN
+                    val spec = input.substring(j, k)
 
-                    String[] items = spec.split(CODE_TEXT_SEPARATOR, 2);
-                    if (items.length == 1) {
-                        return input;
+                    val items = spec.split(regex1, limit = 2).toTypedArray()
+                    if (items.size == 1) {
+                        return input
                     }
-                    String replacement = render(items[1], items[0].split(CODE_LIST_SEPARATOR));
 
-                    buff.append(replacement);
-
-                    i = k + END_TOKEN_LEN;
+                    val replacement =
+                        render(items[1], *items[0].split(regex2).dropLastWhile { it.isEmpty() }.toTypedArray())
+                    buff.append(replacement)
+                    i = k + END_TOKEN_LEN
                 }
             }
         }
     }
 
     /**
-     * Renders {@link AnsiCodeMap} names as an ANSI escape string.
+     * Renders [AnsiCodeMap] names as an ANSI escape string.
      *
      * @param codeNames The code names to render
      *
      * @return an ANSI escape string.
      */
-    public static
-    String renderCodeNames(final String codeNames) {
-        return render(new Ansi(), codeNames.split("\\s")).toString();
+    fun renderCodeNames(codeNames: String): String {
+
+        return render(Ansi(), *codeNames.split(regex).dropLastWhile { it.isEmpty() }.toTypedArray()).toString()
     }
 }

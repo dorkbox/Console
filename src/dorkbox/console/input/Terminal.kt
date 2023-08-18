@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,56 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.console.input;
+package dorkbox.console.input
 
-import java.io.IOException;
+import dorkbox.console.Console
+import org.slf4j.LoggerFactory
+import java.io.IOException
 
-import dorkbox.console.Console;
+@Suppress("unused")
+abstract class Terminal internal constructor() {
+    companion object {
+        val EMPTY_LINE = CharArray(0)
 
-@SuppressWarnings("unused")
-public abstract
-class Terminal {
-    static final char[] EMPTY_LINE = new char[0];
-    static final String CONSOLE_ERROR_INIT = "Unable to initialize the input console.";
-
-    static final int DEFAULT_WIDTH = 80;
-    static final int DEFAULT_HEIGHT = 24;
-    final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
-
-    Terminal() {
+        const val CONSOLE_ERROR_INIT = "Unable to initialize the input console."
+        const val DEFAULT_WIDTH = 80
+        const val DEFAULT_HEIGHT = 24
     }
 
-    abstract
-    void doSetInterruptEnabled(final boolean enabled);
+    val logger = LoggerFactory.getLogger(javaClass)
 
-    protected abstract
-    void doSetEchoEnabled(final boolean enabled);
+    abstract fun doSetInterruptEnabled(enabled: Boolean)
+    protected abstract fun doSetEchoEnabled(enabled: Boolean)
 
-    public abstract
-    void restore() throws IOException;
+    @Throws(IOException::class)
+    abstract fun restore()
 
-    public abstract
-    int getWidth();
-
-    public abstract
-    int getHeight();
+    abstract val width: Int
+    abstract val height: Int
 
     /**
      * Enables or disables CTRL-C behavior in the console
      */
-    public final
-    void setInterruptEnabled(final boolean enabled) {
-        Console.ENABLE_INTERRUPT = enabled;
-        doSetInterruptEnabled(enabled);
+    fun setInterruptEnabled(enabled: Boolean) {
+        Console.ENABLE_INTERRUPT = enabled
+        doSetInterruptEnabled(enabled)
     }
 
     /**
      * Enables or disables character echo to stdout
      */
-    public final
-    void setEchoEnabled(final boolean enabled) {
-        Console.ENABLE_ECHO = enabled;
-        doSetEchoEnabled(enabled);
+    fun setEchoEnabled(enabled: Boolean) {
+        Console.ENABLE_ECHO = enabled
+        doSetEchoEnabled(enabled)
     }
 
     /**
@@ -70,28 +61,23 @@ class Terminal {
      *
      * @return -1 if no data or problems
      */
-    public abstract
-    int read();
+    abstract fun read(): Int
 
     /**
      * Reads a line of characters from the console as a character array, defined as everything before the 'ENTER' key is pressed
      *
      * @return empty char[] if no data
      */
-    public abstract
-    char[] readLineChars();
+    abstract fun readLineChars(): CharArray
 
     /**
      * Reads a single line of characters, defined as everything before the 'ENTER' key is pressed
+     *
      * @return null if no data
      */
-    public
-    String readLine() {
-        char[] line = readLineChars();
-        if (line == null) {
-            return null;
-        }
-        return new String(line);
+    fun readLine(): String? {
+        val line = readLineChars() ?: return null
+        return String(line)
     }
 
     /**
@@ -99,20 +85,18 @@ class Terminal {
      *
      * @return empty char[] if no data
      */
-    public
-    char[] readLinePassword() {
+    fun readLinePassword(): CharArray {
         // don't bother in an IDE. it won't work.
-        boolean echoEnabled = Console.ENABLE_ECHO;
-        Console.ENABLE_ECHO = false;
-        char[] readLine0 = readLineChars();
-        Console.ENABLE_ECHO = echoEnabled;
+        val echoEnabled = Console.ENABLE_ECHO
+        Console.ENABLE_ECHO = false
 
-        return readLine0;
+        val readLine0 = readLineChars()
+        Console.ENABLE_ECHO = echoEnabled
+        return readLine0
     }
 
     /**
      * releases any thread still waiting.
      */
-    public abstract
-    void close();
+    abstract fun close()
 }

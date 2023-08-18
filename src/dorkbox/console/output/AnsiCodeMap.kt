@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,39 +12,23 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
-package dorkbox.console.output;
+package dorkbox.console.output
 
 /**
  * Used for determining what ANSI attribute to use based on a formal name
  */
-class AnsiCodeMap {
-    private final Enum anEnum;
-    private final boolean isColorForBackground;
+internal class AnsiCodeMap(private val anEnum: Enum<*>, val isBackgroundColor: Boolean) {
 
-    AnsiCodeMap(final Enum anEnum, final boolean isColorForBackground) {
-        this.anEnum = anEnum;
-        this.isColorForBackground = isColorForBackground;
-    }
+    val isColor: Boolean
+        get() = anEnum is Color
 
-    boolean isColor() {
-        return anEnum instanceof Color;
-    }
+    val color: Color
+        get() = anEnum as Color
 
-    boolean isBackgroundColor() {
-        return isColorForBackground;
-    }
+    val isAttribute: Boolean
+        get() = anEnum is Attribute
 
-    Color getColor() {
-        return (Color) anEnum;
-    }
-
-    boolean isAttribute() {
-        return anEnum instanceof Attribute;
-    }
-
-    Attribute getAttribute() {
-        return (Attribute) anEnum;
-    }
+    val attribute: Attribute
+        get() = anEnum as Attribute
 }

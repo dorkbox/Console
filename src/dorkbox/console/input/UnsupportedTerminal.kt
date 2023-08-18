@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,152 +13,81 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.console.input;
+package dorkbox.console.input
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import dorkbox.bytes.ByteArrayBuffer
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
+import java.util.concurrent.locks.*
+import kotlin.concurrent.withLock
 
-import dorkbox.bytes.ByteArrayBuffer;
-
-@SuppressWarnings("Duplicates")
-public
-class UnsupportedTerminal extends Terminal {
-
-    private static final char[] NEW_LINE;
-    private static final Thread backgroundReaderThread;
-
-    private static final Object lock = new Object[0];
-    private static String currentConsoleInput = null;
-
-
-
-    static {
-        NEW_LINE = new char[1];
-        NEW_LINE[0] = '\n';
-
-        // this adopts a different thread + locking to enable reader threads to "unblock" after the blocking read.
-        // http://bugs.java.com/bugdatabase/view_bug.do?bug_id=4514257
-        // https://community.oracle.com/message/5318833#5318833
-        backgroundReaderThread = new Thread(new Runnable() {
-            @Override
-            public
-            void run() {
-                final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-
-                try {
-                    while (!Thread.interrupted()) {
-                        currentConsoleInput = null;
-
-                        String line = reader.readLine();
-                        if (line == null) {
-                            break;
-                        }
-
-                        synchronized (lock) {
-                            currentConsoleInput = line;
-                            lock.notifyAll();
-                        }
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
-        backgroundReaderThread.setDaemon(true);
-        backgroundReaderThread.start();
-    }
-
-    private final ThreadLocal<ByteArrayBuffer> buffer = new ThreadLocal<ByteArrayBuffer>() {
-        @Override
-        public
-        ByteArrayBuffer initialValue() {
-            return new ByteArrayBuffer(8, -1);
+class UnsupportedTerminal : Terminal() {
+    private val buffer: ThreadLocal<ByteArrayBuffer> = object : ThreadLocal<ByteArrayBuffer>() {
+        public override fun initialValue(): ByteArrayBuffer {
+            return ByteArrayBuffer(8, -1)
         }
-    };
-
-    private final ThreadLocal<Integer> readCount = new ThreadLocal<Integer>() {
-        @Override
-        public
-        Integer initialValue() {
-            return 0;
+    }
+    private val readCount: ThreadLocal<Int> = object : ThreadLocal<Int>() {
+        public override fun initialValue(): Int {
+            return 0
         }
-    };
-
-    public
-    UnsupportedTerminal() {
     }
 
-    @Override
-    protected
-    void doSetInterruptEnabled(final boolean enabled) {
-    }
+    override fun doSetInterruptEnabled(enabled: Boolean) {}
+    override fun doSetEchoEnabled(enabled: Boolean) {}
+    override fun restore() {}
 
-    @Override
-    protected
-    void doSetEchoEnabled(final boolean enabled) {
-    }
+    override val width: Int
+        get() {
+            return 0
+        }
 
-    @Override
-    public final
-    void restore() {
-    }
-
-    @Override
-    public final
-    int getWidth() {
-        return 0;
-    }
-
-    @Override
-    public final
-    int getHeight() {
-        return 0;
-    }
+    override val height: Int
+        get () {
+            return 0
+        }
 
     /**
      * Reads single character input from the console. This is "faked" by reading a line
      *
      * @return -1 if no data or problems
      */
-    @Override
-    public
-    int read() {
-        int position;
+    override fun read(): Int {
+        val position: Int
         // so, 'readCount' is REALLY the index at which we return letters (until the whole string is returned)
-        ByteArrayBuffer buffer = this.buffer.get();
-        buffer.clearSecure();
+        val buffer = buffer.get()
+        buffer.clearSecure()
 
         // we have to wait for more data.
-        if (this.readCount.get() == 0) {
-            synchronized (lock) {
-                try {
-                    lock.wait();
-                } catch (InterruptedException ignored) {
+        if (readCount.get() == 0) {
+            try {
+                lock.withLock {
+                    condition.await()
                 }
+            }
+            catch (ignored: Exception) {
             }
 
             if (currentConsoleInput == null) {
-                return -1;
+                return -1
             }
 
+            val chars = currentConsoleInput!!.toCharArray()
+            buffer.writeChars(chars)
+            position = buffer.position()
+            buffer.rewind()
 
-            char[] chars = currentConsoleInput.toCharArray();
-            buffer.writeChars(chars);
-            position = buffer.position();
-            buffer.rewind();
-
-            this.readCount.set(position);
+            readCount.set(position)
             if (position == 0) {
                 // only send a NEW LINE if it was the ONLY thing pressed (this is to MOST ACCURATELY simulate single char input
-                return '\n';
+                return '\n'.code
             }
-
-            buffer.rewind();
+            buffer.rewind()
         }
 
-        readCount.set(this.readCount.get() - 2); // 2 bytes per char in the stream
-        return buffer.readChar();
+        readCount.set(readCount.get() - 2) // 2 bytes per char in the stream
+        return buffer.readChar().code
     }
 
     /**
@@ -166,38 +95,70 @@ class UnsupportedTerminal extends Terminal {
      *
      * @return empty char[] if no data
      */
-    @Override
-    public
-    char[] readLineChars() {
+    override fun readLineChars(): CharArray {
         // we have to wait for more data.
-        synchronized (lock) {
-            try {
-                lock.wait();
-            } catch (InterruptedException ignored) {
+        try {
+            lock.withLock {
+                condition.await()
             }
+        }
+        catch (ignored: Exception) {
         }
 
         if (currentConsoleInput == null) {
-            return EMPTY_LINE;
+            return EMPTY_LINE
         }
 
-
-        char[] chars = currentConsoleInput.toCharArray();
-        int length = chars.length;
-
-        if (length == 0) {
+        val chars = currentConsoleInput!!.toCharArray()
+        val length = chars.size
+        return if (length == 0) {
             // only send a NEW LINE if it was the ONLY thing pressed (this is to MOST ACCURATELY simulate single char input
-            return NEW_LINE;
+            NEW_LINE
         }
-
-        return chars;
+        else chars
     }
 
-    @Override
-    public
-    void close() {
-        synchronized (lock) {
-            lock.notifyAll();
+    override fun close() {
+        lock.withLock {
+            condition.signalAll()
+        }
+    }
+
+    companion object {
+        private val NEW_LINE: CharArray
+        private val backgroundReaderThread: Thread
+
+        private val lock = ReentrantLock()
+        private val condition = lock.newCondition()
+
+        private var currentConsoleInput: String? = null
+
+        init {
+            NEW_LINE = CharArray(1)
+            NEW_LINE[0] = '\n'
+
+            // this adopts a different thread + locking to enable reader threads to "unblock" after the blocking read.
+            // http://bugs.java.com/bugdatabase/view_bug.do?bug_id=4514257
+            // https://community.oracle.com/message/5318833#5318833
+            backgroundReaderThread = Thread {
+                val reader = BufferedReader(InputStreamReader(System.`in`))
+                try {
+                    while (!Thread.interrupted()) {
+                        currentConsoleInput = null
+                        val line = reader.readLine() ?: break
+
+                        lock.withLock {
+                            currentConsoleInput = line
+                            condition.signalAll()
+                        }
+                    }
+                }
+                catch (e: IOException) {
+                    throw RuntimeException(e)
+                }
+            }
+            backgroundReaderThread.setDaemon(true)
+            backgroundReaderThread.start()
         }
     }
 }

@@ -132,7 +132,7 @@ dependencies {
 
     api("org.slf4j:slf4j-api:2.0.7")
 
-    val jnaVersion = "5.12.1"
+    val jnaVersion = "5.13.0"
     api("net.java.dev.jna:jna:$jnaVersion")
     api("net.java.dev.jna:jna-platform:$jnaVersion")
 

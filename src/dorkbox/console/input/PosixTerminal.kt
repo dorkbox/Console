@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,63 +13,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dorkbox.console.input;
+package dorkbox.console.input
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
-import com.sun.jna.ptr.IntByReference;
-
-import dorkbox.jna.linux.CLibraryPosix;
-import dorkbox.jna.linux.structs.Termios;
+import com.sun.jna.ptr.IntByReference
+import dorkbox.jna.linux.CLibraryPosix
+import dorkbox.jna.linux.structs.Termios
+import java.io.IOException
+import java.nio.ByteBuffer
 
 /**
  * Terminal that is used for unix platforms. Terminal initialization is handled via JNA and ioctl/tcgetattr/tcsetattr/cfmakeraw.
- * <p>
- * This implementation should work for an reasonable POSIX system.
+ *
+ *
+ * This implementation should work for a reasonable POSIX system.
  */
-public
-class PosixTerminal extends SupportedTerminal {
+class PosixTerminal : SupportedTerminal() {
+    private val original = Termios()
+    private val termInfo = Termios()
+    private val windowSizeBuffer = ByteBuffer.allocate(8)
+    private val inputRef = IntByReference()
 
-    private final Termios original = new Termios();
-    private Termios termInfo = new Termios();
-    private ByteBuffer windowSizeBuffer = ByteBuffer.allocate(8);
-    private final IntByReference inputRef = new IntByReference();
-
-    public
-    PosixTerminal() throws IOException {
+    init {
         // save off the defaults
-        if (CLibraryPosix.tcgetattr(0, this.original) != 0) {
-            throw new IOException(CONSOLE_ERROR_INIT);
+        if (CLibraryPosix.tcgetattr(0, original) != 0) {
+            throw IOException(CONSOLE_ERROR_INIT)
         }
-        this.original.read();
+
+        original.read()
 
         // CTRL-I (tab), CTRL-M (enter)  do not work
-
-        if (CLibraryPosix.tcgetattr(0, this.termInfo) != 0) {
-            throw new IOException(CONSOLE_ERROR_INIT);
+        if (CLibraryPosix.tcgetattr(0, termInfo) != 0) {
+            throw IOException(CONSOLE_ERROR_INIT)
         }
-        this.termInfo.read();
 
-        this.termInfo.inputFlags &= ~Termios.Input.IXON;   // DISABLE - output flow control mediated by ^S and ^Q
-        this.termInfo.inputFlags &= ~Termios.Input.IXOFF;  // DISABLE - input flow control mediated by ^S and ^Q
-        this.termInfo.inputFlags &= ~Termios.Input.BRKINT; // DISABLE - map BREAK to SIGINTR
-        this.termInfo.inputFlags &= ~Termios.Input.INPCK;  // DISABLE - enable checking of parity errors
-        this.termInfo.inputFlags &= ~Termios.Input.PARMRK; // DISABLE - mark parity and framing errors
-        this.termInfo.inputFlags &= ~Termios.Input.ISTRIP; // DISABLE - strip 8th bit off chars
-        this.termInfo.inputFlags |= Termios.Input.IGNBRK;  // ignore BREAK condition
+        termInfo.read()
 
-        this.termInfo.localFlags &= ~Termios.Local.ICANON; // DISABLE - pass chars straight through to terminal instantly
-        this.termInfo.localFlags |= Termios.Local.ECHOCTL;   // echo control chars as ^(Char)
+        termInfo.inputFlags = termInfo.inputFlags and Termios.Input.IXON.inv() // DISABLE - output flow control mediated by ^S and ^Q
+        termInfo.inputFlags = termInfo.inputFlags and Termios.Input.IXOFF.inv() // DISABLE - input flow control mediated by ^S and ^Q
+        termInfo.inputFlags = termInfo.inputFlags and Termios.Input.BRKINT.inv() // DISABLE - map BREAK to SIGINTR
+        termInfo.inputFlags = termInfo.inputFlags and Termios.Input.INPCK.inv() // DISABLE - enable checking of parity errors
+        termInfo.inputFlags = termInfo.inputFlags and Termios.Input.PARMRK.inv() // DISABLE - mark parity and framing errors
+        termInfo.inputFlags = termInfo.inputFlags and Termios.Input.ISTRIP.inv() // DISABLE - strip 8th bit off chars
+        termInfo.inputFlags = termInfo.inputFlags or Termios.Input.IGNBRK // ignore BREAK condition
 
-        this.termInfo.controlFlags &= ~Termios.Control.CSIZE;  // REMOVE character size mask
-        this.termInfo.controlFlags &= ~Termios.Control.PARENB; // DISABLE - parity enable
+        termInfo.localFlags = termInfo.localFlags and Termios.Local.ICANON.inv() // DISABLE - pass chars straight through to terminal instantly
+        termInfo.localFlags = termInfo.localFlags or Termios.Local.ECHOCTL // echo control chars as ^(Char)
 
-        this.termInfo.controlFlags |= Termios.Control.CS8;   // set character size mask 8 bits
-        this.termInfo.controlFlags |= Termios.Control.CREAD; // enable receiver
+        termInfo.controlFlags = termInfo.controlFlags and Termios.Control.CSIZE.inv() // REMOVE character size mask
+        termInfo.controlFlags = termInfo.controlFlags and Termios.Control.PARENB.inv() // DISABLE - parity enable
+        termInfo.controlFlags = termInfo.controlFlags or Termios.Control.CS8 // set character size mask 8 bits
+        termInfo.controlFlags = termInfo.controlFlags or Termios.Control.CREAD // enable receiver
 
-        if (CLibraryPosix.tcsetattr(0, Termios.TCSANOW, this.termInfo) != 0) {
-            throw new IOException("Can not set terminal flags");
+        if (CLibraryPosix.tcsetattr(0, Termios.TCSANOW, termInfo) != 0) {
+            throw IOException("Can not set terminal flags")
         }
     }
 
@@ -77,86 +73,77 @@ class PosixTerminal extends SupportedTerminal {
      * Restore the original terminal configuration, which can be used when shutting down the console reader. The ConsoleReader cannot be
      * used after calling this method.
      */
-    @Override
-    public final
-    void restore() throws IOException {
-        if (CLibraryPosix.tcsetattr(0, Termios.TCSANOW, this.original) != 0) {
-            throw new IOException("Can not reset terminal to defaults");
+    @Throws(IOException::class)
+    override fun restore() {
+        if (CLibraryPosix.tcsetattr(0, Termios.TCSANOW, original) != 0) {
+            throw IOException("Can not reset terminal to defaults")
         }
     }
 
     /**
      * Returns number of columns in the terminal.
      */
-    @SuppressWarnings("NumericCastThatLosesPrecision")
-    @Override
-    public final
-    int getWidth() {
-        if (CLibraryPosix.ioctl(0, CLibraryPosix.TIOCGWINSZ, this.windowSizeBuffer) != 0) {
-            return DEFAULT_WIDTH;
+    override val width: Int
+        get() {
+            return if (CLibraryPosix.ioctl(0, CLibraryPosix.TIOCGWINSZ, windowSizeBuffer) != 0) {
+                DEFAULT_WIDTH
+            }
+            else {
+                (0x000000FF and windowSizeBuffer[2] + (0x000000FF and windowSizeBuffer[3].toInt()) * 256).toShort().toInt()
+            }
         }
-
-        return (short) (0x000000FF & this.windowSizeBuffer.get(2) + (0x000000FF & this.windowSizeBuffer.get(3)) * 256);
-    }
 
     /**
      * Returns number of rows in the terminal.
      */
-    @SuppressWarnings("NumericCastThatLosesPrecision")
-    @Override
-    public final
-    int getHeight() {
-        if (CLibraryPosix.ioctl(0, CLibraryPosix.TIOCGWINSZ, this.windowSizeBuffer) != 0) {
-            return DEFAULT_HEIGHT;
+    override val height: Int
+        get() {
+            return if (CLibraryPosix.ioctl(0, CLibraryPosix.TIOCGWINSZ, windowSizeBuffer) != 0) {
+                DEFAULT_HEIGHT
+            }
+            else {
+                (0x000000FF and windowSizeBuffer[0] + (0x000000FF and windowSizeBuffer[1].toInt()) * 256).toShort().toInt()
+            }
         }
 
-        return (short) (0x000000FF & this.windowSizeBuffer.get(0) + (0x000000FF & this.windowSizeBuffer.get(1)) * 256);
-    }
-
-    @Override
-    protected
-    void doSetEchoEnabled(final boolean enabled) {
+    override fun doSetEchoEnabled(enabled: Boolean) {
         // have to re-get them, since flags change everything
-        if (CLibraryPosix.tcgetattr(0, this.termInfo) != 0) {
-            this.logger.error("Failed to get terminal info");
+        if (CLibraryPosix.tcgetattr(0, termInfo) != 0) {
+            logger.error("Failed to get terminal info")
         }
 
         if (enabled) {
-            this.termInfo.localFlags |= Termios.Local.ECHO; // ENABLE Echo input characters.
+            termInfo.localFlags = termInfo.localFlags or Termios.Local.ECHO // ENABLE Echo input characters.
         }
         else {
-            this.termInfo.localFlags &= ~Termios.Local.ECHO; // DISABLE Echo input characters.
+            termInfo.localFlags = termInfo.localFlags and Termios.Local.ECHO.inv() // DISABLE Echo input characters.
         }
 
-        if (CLibraryPosix.tcsetattr(0, Termios.TCSANOW, this.termInfo) != 0) {
-            this.logger.error("Can not set terminal flags");
+        if (CLibraryPosix.tcsetattr(0, Termios.TCSANOW, termInfo) != 0) {
+            logger.error("Can not set terminal flags")
         }
     }
 
-    @Override
-    protected
-    void doSetInterruptEnabled(final boolean enabled) {
+    override fun doSetInterruptEnabled(enabled: Boolean) {
+
         // have to re-get them, since flags change everything
-        if (CLibraryPosix.tcgetattr(0, this.termInfo) != 0) {
-            this.logger.error("Failed to get terminal info");
+        if (CLibraryPosix.tcgetattr(0, termInfo) != 0) {
+            logger.error("Failed to get terminal info")
         }
 
         if (enabled) {
-            this.termInfo.localFlags |= Termios.Local.ISIG;  // ENABLE ctrl-C
+            termInfo.localFlags = termInfo.localFlags or Termios.Local.ISIG // ENABLE ctrl-C
         }
         else {
-            this.termInfo.localFlags &= ~Termios.Local.ISIG;  // DISABLE ctrl-C
+            termInfo.localFlags = termInfo.localFlags and Termios.Local.ISIG.inv() // DISABLE ctrl-C
         }
-
-        if (CLibraryPosix.tcsetattr(0, Termios.TCSANOW, this.termInfo) != 0) {
-            this.logger.error("Can not set terminal flags");
+        if (CLibraryPosix.tcsetattr(0, Termios.TCSANOW, termInfo) != 0) {
+            logger.error("Can not set terminal flags")
         }
     }
 
-    @Override
-    protected final
-    int doRead() {
-        CLibraryPosix.read(0, inputRef, 1);
-        return inputRef.getValue();
+    override fun doRead(): Int {
+        CLibraryPosix.read(0, inputRef, 1)
+        return inputRef.value
     }
 }

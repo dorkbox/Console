@@ -1,4 +1,20 @@
 /*
+ * Copyright 2023 dorkbox, llc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright (c) 2002-2012, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
@@ -9,179 +25,147 @@
  * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-package dorkbox.console.input;
+package dorkbox.console.input
 
-
-import static com.sun.jna.platform.win32.WinBase.INVALID_HANDLE_VALUE;
-import static com.sun.jna.platform.win32.WinNT.HANDLE;
-import static com.sun.jna.platform.win32.Wincon.STD_INPUT_HANDLE;
-import static com.sun.jna.platform.win32.Wincon.STD_OUTPUT_HANDLE;
-import static dorkbox.jna.windows.Kernel32.ASSERT;
-import static dorkbox.jna.windows.Kernel32.CloseHandle;
-import static dorkbox.jna.windows.Kernel32.GetConsoleMode;
-import static dorkbox.jna.windows.Kernel32.GetConsoleScreenBufferInfo;
-import static dorkbox.jna.windows.Kernel32.GetStdHandle;
-import static dorkbox.jna.windows.Kernel32.ReadConsoleInput;
-import static dorkbox.jna.windows.Kernel32.SetConsoleMode;
-
-import java.io.IOException;
-import java.io.PrintStream;
-
-import com.sun.jna.ptr.IntByReference;
-
-import dorkbox.jna.windows.structs.CONSOLE_SCREEN_BUFFER_INFO;
-import dorkbox.jna.windows.structs.INPUT_RECORD;
-import dorkbox.jna.windows.structs.KEY_EVENT_RECORD;
+import com.sun.jna.platform.win32.WinBase
+import com.sun.jna.platform.win32.WinNT
+import com.sun.jna.platform.win32.Wincon
+import com.sun.jna.ptr.IntByReference
+import dorkbox.jna.windows.Kernel32
+import dorkbox.jna.windows.structs.CONSOLE_SCREEN_BUFFER_INFO
+import dorkbox.jna.windows.structs.INPUT_RECORD
+import java.io.IOException
 
 /**
  * Terminal implementation for Microsoft Windows.
  */
-public
-class WindowsTerminal extends SupportedTerminal {
+class WindowsTerminal : SupportedTerminal() {
+    companion object {
+        // Console mode constants copied `wincon.h`
+        // There are OTHER options, however they DO NOT work with unbuffered input or we just don't care about them.
+        /**
+         * CTRL+C is processed by the system and is not placed in the input buffer. If the input buffer is being read by ReadFile or
+         * ReadConsole, other control keys are processed by the system and are not returned in the ReadFile or ReadConsole buffer. If the
+         * ENABLE_LINE_INPUT mode is also enabled, backspace, carriage return, and linefeed characters are handled by the system.
+         */
+        private const val PROCESSED_INPUT = 1
 
-    // Console mode constants copied <tt>wincon.h</tt>.
-    // There are OTHER options, however they DO NOT work with unbuffered input or we just don't care about them.
-    /**
-     * CTRL+C is processed by the system and is not placed in the input buffer. If the input buffer is being read by ReadFile or
-     * ReadConsole, other control keys are processed by the system and are not returned in the ReadFile or ReadConsole buffer. If the
-     * ENABLE_LINE_INPUT mode is also enabled, backspace, carriage return, and linefeed characters are handled by the system.
-     */
-    private static final int PROCESSED_INPUT = 1;
+        // output stream for "echo" to goto
+        private val OUT = System.out
+    }
 
-    // output stream for "echo" to goto
-    private static final PrintStream OUT = System.out;
+    private val console: WinNT.HANDLE
+    private val outputConsole: WinNT.HANDLE
+    private val info = CONSOLE_SCREEN_BUFFER_INFO()
+    private val inputRecords = INPUT_RECORD.ByReference()
+    private val reference = IntByReference()
 
-    private final HANDLE console;
-    private final HANDLE outputConsole;
+    private val originalMode: Int
+    private var echoEnabled = false
 
-    private final CONSOLE_SCREEN_BUFFER_INFO info = new CONSOLE_SCREEN_BUFFER_INFO();
-    private final INPUT_RECORD.ByReference inputRecords = new INPUT_RECORD.ByReference();
-    private final IntByReference reference = new IntByReference();
-
-    private volatile int originalMode;
-    private boolean echoEnabled = false;
-
-    public
-    WindowsTerminal() throws IOException {
-        console = GetStdHandle(STD_INPUT_HANDLE);
-        if (console == INVALID_HANDLE_VALUE) {
-            throw new IOException("Unable to get input console handle.");
+    init {
+        console = Kernel32.GetStdHandle(Wincon.STD_INPUT_HANDLE)
+        if (console === WinBase.INVALID_HANDLE_VALUE) {
+            throw IOException("Unable to get input console handle.")
         }
 
-        outputConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        if (outputConsole == INVALID_HANDLE_VALUE) {
-            throw new IOException("Unable to get output console handle.");
+        outputConsole = Kernel32.GetStdHandle(Wincon.STD_OUTPUT_HANDLE)
+        if (outputConsole === WinBase.INVALID_HANDLE_VALUE) {
+            throw IOException("Unable to get output console handle.")
         }
 
-        IntByReference mode = new IntByReference();
-        if (GetConsoleMode(console, mode) == 0) {
-            throw new IOException(CONSOLE_ERROR_INIT);
+        val mode = IntByReference()
+        if (Kernel32.GetConsoleMode(console, mode) == 0) {
+            throw IOException(CONSOLE_ERROR_INIT)
         }
 
-        this.originalMode = mode.getValue();
-
-        int newMode = 0; // this is raw everything, not ignoring ctrl-c
-
-        ASSERT(SetConsoleMode(console, newMode), Terminal.CONSOLE_ERROR_INIT);
+        originalMode = mode.value
+        val newMode = 0 // this is raw everything, not ignoring ctrl-c
+        Kernel32.ASSERT(Kernel32.SetConsoleMode(console, newMode), CONSOLE_ERROR_INIT)
     }
 
     /**
      * Restore the original terminal configuration, which can be used when shutting down the console reader.
      * The ConsoleReader cannot be used after calling this method.
      */
-    @Override
-    public final
-    void restore() throws IOException {
-        ASSERT(SetConsoleMode(console, this.originalMode), Terminal.CONSOLE_ERROR_INIT);
-
-        CloseHandle(console);
-        CloseHandle(outputConsole);
+    @Throws(IOException::class)
+    override fun restore() {
+        Kernel32.ASSERT(Kernel32.SetConsoleMode(console, originalMode), CONSOLE_ERROR_INIT)
+        Kernel32.CloseHandle(console)
+        Kernel32.CloseHandle(outputConsole)
     }
 
-    @Override
-    public final
-    int getWidth() {
-        GetConsoleScreenBufferInfo(outputConsole, info);
-        int w = info.window.width() + 1;
-        return w < 1 ? DEFAULT_WIDTH : w;
-    }
-
-    @Override
-    public final
-    int getHeight() {
-        GetConsoleScreenBufferInfo(outputConsole, info);
-        int h = info.window.height() + 1;
-        return h < 1 ? DEFAULT_HEIGHT : h;
-    }
-
-    @Override
-    protected
-    void doSetEchoEnabled(final boolean enabled) {
-        // only way to do this, console modes DO NOT work
-        echoEnabled = enabled;
-    }
-
-    @Override
-    protected
-    void doSetInterruptEnabled(final boolean enabled) {
-        IntByReference mode = new IntByReference();
-        GetConsoleMode(console, mode);
-
-        int newMode;
-        if (enabled) {
-            // Enable  Ctrl+C
-            newMode = mode.getValue() | PROCESSED_INPUT;
-        } else {
-            // Disable Ctrl+C
-            newMode = mode.getValue() & ~PROCESSED_INPUT;
+    override val width: Int
+        get() {
+            Kernel32.GetConsoleScreenBufferInfo(outputConsole, info)
+            val w = info.window.width() + 1
+            return if (w < 1) DEFAULT_WIDTH else w
         }
 
-      ASSERT(SetConsoleMode(console, newMode), Terminal.CONSOLE_ERROR_INIT);
+    override val height: Int
+        get() {
+            Kernel32.GetConsoleScreenBufferInfo(outputConsole, info)
+            val h = info.window.height() + 1
+            return if (h < 1) DEFAULT_HEIGHT else h
+        }
+
+    override fun doSetEchoEnabled(enabled: Boolean) {
+        // only way to do this, console modes DO NOT work
+        echoEnabled = enabled
     }
 
-    @Override
-    protected final
-    int doRead() {
-        int input = readInput();
+    override fun doSetInterruptEnabled(enabled: Boolean) {
+        val mode = IntByReference()
+        Kernel32.GetConsoleMode(console, mode)
 
+        val newMode: Int = if (enabled) {
+            // Enable  Ctrl+C
+            mode.value or PROCESSED_INPUT
+        }
+        else {
+            // Disable Ctrl+C
+            mode.value and PROCESSED_INPUT.inv()
+        }
+        Kernel32.ASSERT(Kernel32.SetConsoleMode(console, newMode), CONSOLE_ERROR_INIT)
+    }
+
+    override fun doRead(): Int {
+        val input = readInput()
         if (echoEnabled) {
-            char asChar = (char) input;
+            val asChar = input.toChar()
             if (asChar == '\n') {
-                OUT.println();
+                OUT.println()
             }
             else {
-                OUT.write(asChar);
+                OUT.write(asChar.code)
             }
             // have to flush, otherwise we'll never see the chars on screen
-            OUT.flush();
+            OUT.flush()
         }
-
-        return input;
+        return input
     }
 
-    private
-    int readInput() {
+    private fun readInput(): Int {
         // keep reading input events until we find one that we are interested in (ie: keyboard input)
         while (true) {
             // blocks until there is (at least) 1 event on the buffer
-            ReadConsoleInput(console, inputRecords, 1, reference);
-
-            for (int i = 0; i < reference.getValue(); ++i) {
+            Kernel32.ReadConsoleInput(console, inputRecords, 1, reference)
+            for (i in 0 until reference.value) {
                 if (inputRecords.EventType == INPUT_RECORD.KEY_EVENT) {
-                    KEY_EVENT_RECORD keyEvent = inputRecords.Event.KeyEvent;
+                    val keyEvent = inputRecords.Event.KeyEvent
 
                     //logger.trace(keyEvent.bKeyDown ? "KEY_DOWN" : "KEY_UP", "key code:", keyEvent.wVirtualKeyCode, "char:", (long)keyEvent.uChar.unicodeChar);
                     if (keyEvent.keyDown) {
-                        final char uChar = keyEvent.uChar.unicodeChar;
-                        if (uChar > 0) {
+                        val uChar = keyEvent.uChar.unicodeChar
+                        if (uChar.code > 0) {
                             if (uChar == '\r') {
                                 // we purposefully swallow input after \r, and substitute it with \n
-                                return '\n';
-                            } else if (uChar == '\n') {
-                                continue;
+                                return '\n'.code
                             }
-
-                            return uChar;
+                            else if (uChar == '\n') {
+                                continue
+                            }
+                            return uChar.code
                         }
                     }
                 }
