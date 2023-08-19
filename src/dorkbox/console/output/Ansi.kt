@@ -720,9 +720,7 @@ class Ansi(private val builder: StringBuilder = StringBuilder()) {
             if (i != 0) {
                 builder.append(';')
             }
-            if (options[i] != null) {
-                builder.append(options[i])
-            }
+            builder.append(options[i])
         }
         builder.append(command)
         return this
@@ -738,8 +736,8 @@ class Ansi(private val builder: StringBuilder = StringBuilder()) {
         private val original_out = System.out
         private val original_err = System.err
 
-        val out = createPrintStream(original_out, 1) // STDOUT_FILENO
-        val err = createPrintStream(original_err, 2) // STDERR_FILENO
+        val out = createPrintStream(original_out, 1, Console.AUTO_FLUSH) // STDOUT_FILENO
+        val err = createPrintStream(original_err, 2, Console.AUTO_FLUSH) // STDERR_FILENO
 
         init {
             // make SURE that our console in/out/err are correctly setup BEFORE accessing methods in this class
@@ -809,12 +807,12 @@ class Ansi(private val builder: StringBuilder = StringBuilder()) {
                 return "xterm".equals(term, ignoreCase = true)
             }
 
-        private fun createPrintStream(stream: OutputStream, fileno: Int): PrintStream {
+        private fun createPrintStream(stream: OutputStream, fileno: Int, autoFlush: Boolean): PrintStream {
             val type = if (fileno == 1) "OUT" else "ERR"
 
             if (!Console.ENABLE_ANSI) {
                 // Use the ANSIOutputStream to strip out the ANSI escape sequences.
-                return getStripPrintStream(stream, type)
+                return getStripPrintStream(stream, type, autoFlush)
             }
 
             // intellij idea console supports ANSI colors... but NOT REALLY! (they are off)
@@ -823,33 +821,33 @@ class Ansi(private val builder: StringBuilder = StringBuilder()) {
             ) {
 
                 // Use the ANSIOutputStream to strip out the ANSI escape sequences.
-                return getStripPrintStream(stream, type)
+                return getStripPrintStream(stream, type, autoFlush)
             }
             if (!isXterm) {
                 if (isWindows) {
                     // check if windows10+ (which natively supports ANSI)
                     if (isWindows10_plus) {
                         // Just wrap it up so that when we get closed, we reset the attributes.
-                        return defaultPrintStream(stream, type)
+                        return defaultPrintStream(stream, type, autoFlush)
                     }
 
-                    // On windows we know the console does not interpret ANSI codes..
+                    // On windows we know the console does not interpret ANSI codes...
                     try {
-                        val printStream = PrintStream(WindowsAnsiOutputStream(stream, fileno))
+                        val printStream = PrintStream(WindowsAnsiOutputStream(stream, fileno), autoFlush)
                         if (logger.isDebugEnabled) {
                             logger.debug("Created a Windows ANSI PrintStream for {}", type)
                         }
                         return printStream
                     }
                     catch (ignore: Throwable) {
-                        // this happens when JNA is not in the path.. or
+                        // this happens when JNA is not in the path... or
                         // this happens when the stdout is being redirected to a file.
                         // this happens when the stdout is being redirected to different console.
                     }
 
                     // Use the ANSIOutputStream to strip out the ANSI escape sequences.
                     if (!Console.FORCE_ENABLE_ANSI) {
-                        return getStripPrintStream(stream, type)
+                        return getStripPrintStream(stream, type, autoFlush)
                     }
                 }
                 else {
@@ -857,7 +855,7 @@ class Ansi(private val builder: StringBuilder = StringBuilder()) {
                     try {
                         // If we can detect that stdout is not a tty.. then setup to strip the ANSI sequences..
                         if (!Console.FORCE_ENABLE_ANSI && CLibraryPosix.isatty(fileno) == 0) {
-                            return getStripPrintStream(stream, type)
+                            return getStripPrintStream(stream, type, autoFlush)
                         }
                     }
                     catch (ignore: Throwable) {
@@ -868,20 +866,21 @@ class Ansi(private val builder: StringBuilder = StringBuilder()) {
 
             // By default we assume the terminal can handle ANSI codes.
             // Just wrap it up so that when we get closed, we reset the attributes.
-            return defaultPrintStream(stream, type)
+            return defaultPrintStream(stream, type, autoFlush)
         }
 
-        private fun getStripPrintStream(stream: OutputStream, type: String): PrintStream {
+        private fun getStripPrintStream(stream: OutputStream, type: String, autoFlush: Boolean): PrintStream {
             if (logger.isDebugEnabled) {
                 logger.debug("Created a strip-ANSI PrintStream for {}", type)
             }
-            return PrintStream(AnsiOutputStream(stream))
+            return PrintStream(AnsiOutputStream(stream), autoFlush)
         }
 
-        private fun defaultPrintStream(stream: OutputStream, type: String): PrintStream {
+        private fun defaultPrintStream(stream: OutputStream, type: String, autoFlush: Boolean): PrintStream {
             if (logger.isDebugEnabled) {
                 logger.debug("Created ANSI PrintStream for {}", type)
             }
+
             return PrintStream(object : FilterOutputStream(stream) {
                 @Throws(IOException::class)
                 override fun close() {
@@ -889,7 +888,7 @@ class Ansi(private val builder: StringBuilder = StringBuilder()) {
                     flush()
                     super.close()
                 }
-            })
+            }, autoFlush)
         }
     }
 }
