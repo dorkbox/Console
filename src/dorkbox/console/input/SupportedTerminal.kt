@@ -26,14 +26,14 @@ abstract class SupportedTerminal : Terminal(), Runnable {
     private val out = System.out
 
     private val inputLockLine = ReentrantLock()
-    protected val inputLockLineCondition = inputLockLine.newCondition()
+    private val inputLockLineCondition = inputLockLine.newCondition()
 
     private val inputLockSingle = ReentrantLock()
-    protected val inputLockSingleCondition = inputLockSingle.newCondition()
+    private val inputLockSingleCondition = inputLockSingle.newCondition()
 
 
-    protected val charInputBuffers: MutableList<CharHolder> = ArrayList()
-    protected val charInput: ThreadLocal<CharHolder> = object : ThreadLocal<CharHolder>() {
+    private val charInputBuffers: MutableList<CharHolder> = ArrayList()
+    private val charInput: ThreadLocal<CharHolder> = object : ThreadLocal<CharHolder>() {
         public override fun initialValue(): CharHolder {
             return CharHolder()
         }
@@ -58,6 +58,7 @@ abstract class SupportedTerminal : Terminal(), Runnable {
             // don't want to register a read() WHILE we are still processing the current input.
             // also adds it to the global list of char inputs
             charInputBuffers.add(holder)
+
             try {
                 inputLockSingleCondition.await()
             }
@@ -92,6 +93,9 @@ abstract class SupportedTerminal : Terminal(), Runnable {
                 return EMPTY_LINE
             }
 
+            // removes from the global list of line inputs
+            lineInputBuffers.remove(buffer)
+
             val len = buffer.position()
             if (len == 0) {
                 return EMPTY_LINE
@@ -103,8 +107,7 @@ abstract class SupportedTerminal : Terminal(), Runnable {
             // dump the chars in the buffer (safer for passwords, etc)
             buffer.clearSecure()
 
-            // also clears and removes from the global list of line inputs
-            lineInputBuffers.remove(buffer)
+
             return readChars
         }
     }
@@ -132,6 +135,7 @@ abstract class SupportedTerminal : Terminal(), Runnable {
         var ansi: Ansi? = null
         var typedChar: Int
         var asChar: Char
+
         while (doRead().also { typedChar = it } != -1) {
             // don't let anyone add a new reader while we are still processing the current actions
             asChar = typedChar.toChar()
@@ -152,46 +156,51 @@ abstract class SupportedTerminal : Terminal(), Runnable {
             // now to handle readLine stuff
 
             // if we type a backspace key, swallow it + previous in READLINE. READCHAR will have it passed anyways.
-            if (Console.ENABLE_BACKSPACE && asChar == '\b') {
+            if (Console.ENABLE_BACKSPACE && (asChar == '\b' || asChar == '\u007F')) {
                 var position = 0
                 var overwrite: CharArray? = null
 
                 // clear ourself + one extra.
-                for (buffer in lineInputBuffers) {
-                    // size of the buffer BEFORE our backspace was typed
-                    var length = buffer.position()
-                    var amtToOverwrite = 4 // 2*2 backspace is always 2 chars (^?) * 2 because it's bytes
-                    if (length > 1) {
-                        var charAt = buffer.readChar(length - 2)
-                        amtToOverwrite += getPrintableCharacters(charAt.code)
+                inputLockLine.withLock {
+                    for (buffer in lineInputBuffers) {
+                        // size of the buffer BEFORE our backspace was typed
+                        var length = buffer.position()
+                        var amtToOverwrite = 4 // 2*2 backspace is always 2 chars (^?) * 2 because it's bytes
+                        if (length > 1) {
+                            var charAt = buffer.readChar(length - 2)
+                            amtToOverwrite += getPrintableCharacters(charAt.code)
 
-                        // delete last item in our buffer
-                        length -= 2
-                        buffer.setPosition(length)
+                            // delete last item in our buffer
+                            length -= 2
+                            buffer.setPosition(length)
 
-                        // now figure out where the cursor is really at.
-                        // this is more memory friendly than buf.toString.length
-                        var i = 0
-                        while (i < length) {
-                            charAt = buffer.readChar(i)
-                            position += getPrintableCharacters(charAt.code)
-                            i += 2
+                            // now figure out where the cursor is really at.
+                            // this is more memory friendly than buf.toString.length
+                            var i = 0
+                            while (i < length) {
+                                charAt = buffer.readChar(i)
+                                position += getPrintableCharacters(charAt.code)
+                                i += 2
+                            }
+                            position++
                         }
-                        position++
-                    }
-                    overwrite = CharArray(amtToOverwrite)
-                    for (i in 0 until amtToOverwrite) {
-                        overwrite[i] = overWriteChar
+                        overwrite = CharArray(amtToOverwrite)
+
+                        for (i in 0 until amtToOverwrite) {
+                            overwrite!![i] = overWriteChar
+                        }
                     }
                 }
+
+
                 if (Console.ENABLE_ANSI && overwrite != null) {
                     if (ansi == null) {
                         ansi = Ansi.ansi()
                     }
 
-                    // move back however many, over write, then go back again
+                    // move back however many, overwrite, then go back again
                     out.print(ansi.cursorToColumn(position))
-                    out.print(overwrite)
+                    out.print(overwrite!!)
                     out.print(ansi.cursorToColumn(position))
                     out.flush()
                 }
@@ -205,8 +214,10 @@ abstract class SupportedTerminal : Terminal(), Runnable {
             else {
                 // only append if we are not a new line.
                 // our windows console PREVENTS us from returning '\r' (it truncates '\r\n', and returns just '\n')
-                for (buffer in lineInputBuffers) {
-                    buffer.writeChar(asChar)
+                inputLockLine.withLock {
+                    for (buffer in lineInputBuffers) {
+                        buffer.writeChar(asChar)
+                    }
                 }
             }
         }
