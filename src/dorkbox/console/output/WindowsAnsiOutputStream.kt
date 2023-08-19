@@ -83,7 +83,7 @@ class WindowsAnsiOutputStream internal constructor(os: OutputStream?, fHandle: I
 
     @get:Throws(IOException::class)
     private val consoleInfo: Unit
-        private get() {
+        get() {
             out.flush()
             Kernel32.ASSERT(Kernel32.GetConsoleScreenBufferInfo(console, info), "Could not get the screen info:")
         }

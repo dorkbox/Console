@@ -79,6 +79,13 @@ object Console {
     val INPUT_CONSOLE_TYPE = "AUTO"
 
     /**
+     * Enables the output printstream to automatically flush after every write. NOTE: This is DANGEROUS, as it removes the usefulness of
+     * the backing BufferWriter!
+     */
+    @Property
+    val AUTO_FLUSH = true
+
+    /**
      * Gets the version number.
      */
     const val version = "3.10"
@@ -95,9 +102,10 @@ object Console {
      *
      * @return a terminal that supports single character input or the default buffered input
      */
-    fun `in`(): Terminal {
-        return Input.terminal
-    }
+    val `in`: Terminal
+        get() {
+            return Input.terminal
+        }
 
     /**
      * If the standard in supports single character input, then an InputStream will be returned that supports it, otherwise a buffered (aka
@@ -105,9 +113,10 @@ object Console {
      *
      * @return an InputStream that supports single character input or the default buffered input
      */
-    fun inputStream(): InputStream {
-        return Input.wrappedInputStream
-    }
+    val inputStream: InputStream
+        get() {
+            return Input.wrappedInputStream
+        }
 
     /**
      * Initializes and hooks output streams, necessary when using ANSI for the first time inside of an output stream (as it initializes
@@ -117,8 +126,8 @@ object Console {
      * This is not needed for input streams, since they do not hook System.err/out.
      */
     fun hookSystemOutputStreams() {
-        out()
-        err()
+        out
+        err
     }
 
     /**
@@ -127,9 +136,10 @@ object Console {
      *
      * @return a PrintStream which is ANSI aware.
      */
-    fun out(): PrintStream {
-        return Ansi.out
-    }
+    val out: PrintStream
+        get() {
+            return Ansi.out
+        }
 
     /**
      * If the standard out natively supports ANSI escape codes, then this just returns System.err (wrapped to reset ANSI stream on close),
@@ -137,9 +147,10 @@ object Console {
      *
      * @return a PrintStream which is ANSI aware.
      */
-    fun err(): PrintStream {
-        return Ansi.err
-    }
+    val err: PrintStream
+        get() {
+            return Ansi.err
+        }
 
     /**
      * If we are installed to the system (IE: System.err/out, then reset those streams, otherwise there is nothing to do from a static

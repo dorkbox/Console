@@ -73,10 +73,10 @@ abstract class Terminal internal constructor() {
     /**
      * Reads a single line of characters, defined as everything before the 'ENTER' key is pressed
      *
-     * @return null if no data
+     * @return the string contents of a line (empty if there is no characters)
      */
-    fun readLine(): String? {
-        val line = readLineChars() ?: return null
+    fun readLine(): String {
+        val line = readLineChars()
         return String(line)
     }
 
