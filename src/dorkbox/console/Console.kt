@@ -19,6 +19,7 @@ import dorkbox.console.input.Input
 import dorkbox.console.input.Terminal
 import dorkbox.console.output.Ansi
 import dorkbox.console.output.AnsiOutputStream
+import dorkbox.console.util.TerminalDetection
 import dorkbox.propertyLoader.Property
 import dorkbox.updates.Updates.add
 import java.io.IOException
@@ -33,39 +34,41 @@ import java.io.PrintStream
 @Suppress("unused")
 object Console {
     /**
-     * If true, allows an ANSI output stream to be created on System.out/err, If true, allows an ANSI output stream to be created on
-     * System.out/err, otherwise it will provide an ANSI aware PrintStream which strips out the ANSI escape sequences.
+     * If true, allows an ANSI output stream to be created on System.out/err, otherwise it will provide an ANSI aware PrintStream which
+     * strips out the ANSI escape sequences.
      */
-    @Property
+    @Property(description = "If true, allows an ANSI output stream to be created on System.out/err, otherwise it will provide an ANSI aware PrintStream which strips out the ANSI escape sequences.")
     var ENABLE_ANSI = true
 
     /**
-     * If true, then we always force the raw ANSI output stream to be enabled (even if the output stream is not aware of ANSI commands).
+     * If true, then we always force the raw ANSI output stream to be enabled, even if the output stream is not aware of ANSI commands.
      * This can be used to obtain the raw ANSI escape codes for other color aware programs (ie: less -r)
      */
-    @Property
+    @Property(description = "If true, then we always force the raw ANSI output stream to be enabled, even if the output stream is not aware of ANSI commands.")
     var FORCE_ENABLE_ANSI = false
 
     /**
-     * Enables or disables character echo to stdout in the console, should call [Terminal.setEchoEnabled] after
-     * initialization
+     * Enables or disables character echo to stdout in the console, should call [Terminal.setEchoEnabled] after initialization
      */
-    @Property
+    @Property(description = "Enables or disables character echo to stdout in the console, should call [Terminal.setEchoEnabled] after initialization")
     @Volatile
     var ENABLE_ECHO = true
 
     /**
      * Enables or disables CTRL-C behavior in the console, should call [Terminal.setInterruptEnabled] after initialization
      */
-    @Property
+    @Property(description = "Enables or disables CTRL-C behavior in the console, should call [Terminal.setInterruptEnabled] after initialization")
     @Volatile
     var ENABLE_INTERRUPT = false
 
     /**
      * Enables the backspace key to delete characters in the line buffer and (if ANSI is enabled) from the screen.
      */
-    @Property
+    @Property(description = "Enables the backspace key to delete characters in the line buffer and (if ANSI is enabled) from the screen.")
     val ENABLE_BACKSPACE = true
+
+
+
 
     /**
      * Used to determine what console to use/hook when AUTO is not correctly working.
@@ -76,14 +79,14 @@ object Console {
      * UNIX - try to control a UNIX console
      * NONE - do not try to control anything, only line input is supported
      */
-    @Property
-    val INPUT_CONSOLE_TYPE = "AUTO"
+    @Property(description = "Used to determine what console to use/hook when AUTO is not correctly working.")
+    val INPUT_CONSOLE_TYPE = TerminalDetection.AUTO
 
     /**
-     * Enables the output printstream to automatically flush after every write. NOTE: This is DANGEROUS, as it removes the usefulness of
-     * the backing BufferWriter!
+     * Enables the output print-stream to automatically flush after every write. NOTE: This is DANGEROUS, as it removes the usefulness of
+     * the streams Buffered Writer!
      */
-    @Property
+    @Property(description = "Enables the output print-stream to automatically flush after every write.")
     val AUTO_FLUSH = true
 
     /**
