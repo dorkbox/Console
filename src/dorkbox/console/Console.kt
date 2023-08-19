@@ -71,8 +71,9 @@ object Console {
      * Used to determine what console to use/hook when AUTO is not correctly working.
      * Valid options are:
      * AUTO - automatically determine which OS/console type to use
-     * UNIX - try to control a UNIX console
+     * MACOS - try to control a MACOS console
      * WINDOWS - try to control a WINDOWS console
+     * UNIX - try to control a UNIX console
      * NONE - do not try to control anything, only line input is supported
      */
     @Property

@@ -16,6 +16,7 @@
 package dorkbox.console.input
 
 import dorkbox.console.Console
+import dorkbox.os.OS
 import dorkbox.os.OS.isWindows
 import org.slf4j.LoggerFactory
 import java.io.IOException
@@ -31,31 +32,39 @@ object Input {
         var term: Terminal
 
         try {
-            term = if (type == "UNIX") {
-                PosixTerminal()
-            }
-            else if (type == "WINDOWS") {
-                WindowsTerminal()
-            }
-            else if (type == "NONE") {
-                UnsupportedTerminal()
-            }
-            else {
-                // AUTO type.
-
-                // if these cannot be created, because we are in an IDE, an error will be thrown
-
-                val IS_CYGWIN = isWindows && System.getenv("PWD") != null && System.getenv("PWD").startsWith("/")
-                val IS_MSYSTEM = isWindows && System.getenv("MSYSTEM") != null && (System.getenv("MSYSTEM")
-                    .startsWith("MINGW") || System.getenv("MSYSTEM") == "MSYS")
-                val IS_CONEMU = (isWindows && System.getenv("ConEmuPID") != null)
-
-
-                if (isWindows && !IS_CYGWIN && !IS_MSYSTEM && !IS_CONEMU) {
+            term = when (type) {
+                "MACOS"    -> {
+                    MacOsTerminal()
+                }
+                "UNIX"    -> {
+                    PosixTerminal()
+                }
+                "WINDOWS" -> {
                     WindowsTerminal()
                 }
-                else {
-                    PosixTerminal()
+                "NONE"    -> {
+                    UnsupportedTerminal()
+                }
+                else      -> {
+                    // AUTO type.
+
+                    // if these cannot be created, because we are in an IDE, an error will be thrown
+
+                    if (OS.isMacOsX) {
+                        MacOsTerminal()
+                    } else {
+                        val IS_CYGWIN = isWindows && System.getenv("PWD") != null && System.getenv("PWD").startsWith("/")
+                        val IS_MSYSTEM = isWindows && System.getenv("MSYSTEM") != null && (System.getenv("MSYSTEM").startsWith("MINGW") || System.getenv("MSYSTEM") == "MSYS")
+                        val IS_CONEMU = (isWindows && System.getenv("ConEmuPID") != null)
+
+
+                        if (isWindows && !IS_CYGWIN && !IS_MSYSTEM && !IS_CONEMU) {
+                            WindowsTerminal()
+                        }
+                        else {
+                            PosixTerminal()
+                        }
+                    }
                 }
             }
         }
@@ -75,9 +84,7 @@ object Input {
             logger.debug("Terminal is UNSUPPORTED (best guess). Unable to support single key input. Only line input available.")
         }
         else if (debugEnabled) {
-            logger.debug(
-                "Created Terminal: {} ({}w x {}h)", terminal.javaClass.getSimpleName(), terminal.width, terminal.height
-            )
+            logger.debug("Created Terminal: ${terminal.javaClass.getSimpleName()} (${terminal.width}w x ${terminal.height}h)")
         }
 
         if (term is SupportedTerminal) {
