@@ -92,7 +92,7 @@ object Console {
     /**
      * Gets the version number.
      */
-    const val version = "3.10"
+    const val version = "4.0"
 
 
     init {
