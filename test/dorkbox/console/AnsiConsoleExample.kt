@@ -38,22 +38,23 @@ object AnsiConsoleExample {
 
         // needed to hook the output streams, so "normal" System.out/err work (rather than having to use Console.err/out
         Console.hookSystemOutputStreams()
-        System.err.println("System Properties")
-        val properties = System.getProperties()
-        for ((key, value) in properties) {
-            System.err.format("\t%s=%s%n", key, value)
-        }
 
-        System.err.println("")
-        System.err.println("")
-        System.err.println("")
-        System.err.println("Runtime Arguments")
-        val runtimeMxBean = ManagementFactory.getRuntimeMXBean()
-        val arguments = runtimeMxBean.inputArguments
-        System.err.println(arguments.toTypedArray().contentToString())
-        System.err.println("")
-        System.err.println("")
-        System.err.println("")
+//        System.err.println("System Properties")
+//        val properties = System.getProperties()
+//        for ((key, value) in properties) {
+//            System.err.format("\t%s=%s%n", key, value)
+//        }
+//
+//        System.err.println("")
+//        System.err.println("")
+//        System.err.println("")
+//        System.err.println("Runtime Arguments")
+//        val runtimeMxBean = ManagementFactory.getRuntimeMXBean()
+//        val arguments = runtimeMxBean.inputArguments
+//        System.err.println(arguments.toTypedArray().contentToString())
+//        System.err.println("")
+//        System.err.println("")
+//        System.err.println("")
 
         System.out.println(
             Ansi.ansi().fg(Color.BLACK).a("black").bg(Color.BLACK).a("black")
