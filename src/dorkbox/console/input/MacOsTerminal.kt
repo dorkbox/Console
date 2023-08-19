@@ -19,13 +19,13 @@ import com.sun.jna.ptr.IntByReference
 import dorkbox.jna.linux.CLibraryPosix
 import dorkbox.jna.macos.CLibraryApple
 import dorkbox.jna.macos.CLibraryApple.TIOCGWINSZ
-import dorkbox.jna.macos.Termios
-import dorkbox.jna.macos.Termios.*
-import dorkbox.jna.macos.Termios.Input
-import dorkbox.jna.macos.WindowSize
+import dorkbox.jna.macos.structs.Termios
+import dorkbox.jna.macos.structs.Termios.*
+import dorkbox.jna.macos.structs.Termios.Input
+import dorkbox.jna.macos.structs.WindowSize
+import dorkbox.os.OS
 import java.io.IOException
-
-
+import java.util.concurrent.*
 
 /**
  * Terminal that is used for unix platforms. Terminal initialization is handled via JNA and ioctl/tcgetattr/tcsetattr/cfmakeraw.
@@ -33,6 +33,45 @@ import java.io.IOException
  * This implementation should work for Apple osx.
  */
 class MacOsTerminal : SupportedTerminal() {
+    // stty size logic via Mordent: https://github.com/ajalt/mordant/blob/master/mordant/src/jvmMain/kotlin/com/github/ajalt/mordant/internal/JnaMppImplsMacos.kt
+    // apache 2.0
+    // Copyright 2018 AJ Alt
+    companion object {
+        private fun runCommand(vararg args: String): Process? {
+            return try {
+                ProcessBuilder(*args).redirectInput(ProcessBuilder.Redirect.INHERIT).start()
+            }
+            catch (e: IOException) {
+                null
+            }
+        }
+
+        private fun parseSttySize(output: String): Pair<Int, Int>? {
+            val dimens = output.split(" ").mapNotNull { it.toIntOrNull() }
+            if (dimens.size != 2) return null
+            return dimens[1] to dimens[0]
+        }
+
+        private fun getSttySize(timeoutMs: Long): Pair<Int, Int>? {
+            val process = when {
+                // Try running stty both directly and via env, since neither one works on all systems
+                else -> runCommand("stty", "size") ?: runCommand("/usr/bin/env", "stty", "size")
+            } ?: return null
+
+            try {
+                if (!process.waitFor(timeoutMs, TimeUnit.MILLISECONDS)) {
+                    return null
+                }
+            }
+            catch (e: InterruptedException) {
+                return null
+            }
+
+            val output = process.inputStream.bufferedReader().readText().trim()
+            return parseSttySize(output)
+        }
+    }
+
     private val original = Termios()
     private val termInfo = Termios()
     private val inputRef = IntByReference()
@@ -89,14 +128,22 @@ class MacOsTerminal : SupportedTerminal() {
      */
     override val width: Int
         get() {
-            val size = WindowSize()
-            return if (CLibraryApple.ioctl(0, TIOCGWINSZ, size) != 0) {
-                DEFAULT_WIDTH
+            return if (OS.is64bit && OS.isArm) {
+                //M1 doesn't work for whatever reason!
+                // https://github.com/ajalt/mordant/issues/86
+                // see https://github.com/search?q=repo%3Aajalt%2Fmordant%20detectTerminalSize&type=code
+                return getSttySize(100)?.first ?: DEFAULT_WIDTH
+            } else {
+                val size = WindowSize()
+                if (CLibraryApple.ioctl(0, TIOCGWINSZ, size) == -1) {
+                    DEFAULT_WIDTH
+                }
+                else {
+                    size.read()
+                    size.ws_row.toInt()
+                }
             }
-            else {
-                size.read()
-                size.rows.toInt()
-            }
+
         }
 
     /**
@@ -104,13 +151,20 @@ class MacOsTerminal : SupportedTerminal() {
      */
     override val height: Int
         get() {
-            val size = WindowSize()
-            return if (CLibraryApple.ioctl(0, TIOCGWINSZ, size) != 0) {
-                DEFAULT_HEIGHT
-            }
-            else {
-                size.read()
-                size.columns.toInt()
+            return if (OS.is64bit && OS.isArm) {
+                //M1 doesn't work for whatever reason!
+                // https://github.com/ajalt/mordant/issues/86
+                // see https://github.com/search?q=repo%3Aajalt%2Fmordant%20detectTerminalSize&type=code
+                return getSttySize(100)?.second ?: DEFAULT_HEIGHT
+            } else {
+                val size = WindowSize()
+                 if (CLibraryApple.ioctl(0, TIOCGWINSZ, size) == -1) {
+                    DEFAULT_HEIGHT
+                }
+                else {
+                    size.read()
+                    size.ws_col.toInt()
+                }
             }
         }
 
@@ -153,4 +207,6 @@ class MacOsTerminal : SupportedTerminal() {
         CLibraryPosix.read(0, inputRef, 1)
         return inputRef.value
     }
+
+
 }
