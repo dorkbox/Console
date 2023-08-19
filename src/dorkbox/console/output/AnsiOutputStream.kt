@@ -285,20 +285,22 @@ open class AnsiOutputStream(os: OutputStream?) : FilterOutputStream(os) {
 
                             // will throw a ClassCast exception IF NOT an int.
                             val value = next as Int
-                            if (30 <= value && value <= 37) {
-                                // foreground
-                                processSetForegroundColor(value - 30)
-                            }
-                            else if (40 <= value && value <= 47) {
-                                // background
-                                processSetBackgroundColor(value - 40)
-                            }
-                            else {
-                                when (value) {
-                                    ATTRIBUTE_DEFAULT_FG -> processDefaultTextColor()
-                                    ATTRIBUTE_DEFAULT_BG -> processDefaultBackgroundColor()
-                                    ATTRIBUTE_RESET      -> processAttributeReset()
-                                    else                 -> processSetAttribute(value)
+                            when (value) {
+                                in 30..37 -> {
+                                    // foreground
+                                    processSetForegroundColor(value - 30)
+                                }
+                                in 40..47 -> {
+                                    // background
+                                    processSetBackgroundColor(value - 40)
+                                }
+                                else      -> {
+                                    when (value) {
+                                        ATTRIBUTE_DEFAULT_FG -> processDefaultTextColor()
+                                        ATTRIBUTE_DEFAULT_BG -> processDefaultBackgroundColor()
+                                        ATTRIBUTE_RESET      -> processAttributeReset()
+                                        else                 -> processSetAttribute(value)
+                                    }
                                 }
                             }
                         }
@@ -358,6 +360,7 @@ open class AnsiOutputStream(os: OutputStream?) : FilterOutputStream(os) {
         }
         catch (ignore: IllegalArgumentException) {
         }
+
         return false
     }
 
