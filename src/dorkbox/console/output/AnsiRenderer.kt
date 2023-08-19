@@ -15,6 +15,8 @@
  */
 package dorkbox.console.output
 
+import dorkbox.propertyLoader.Property
+
 /**
  * Renders ANSI color escape-codes in strings by parsing out some special syntax to pick up the correct fluff to use.
  *
@@ -38,10 +40,14 @@ package dorkbox.console.output
 object AnsiRenderer {
     private val regex = "\\s".toRegex()
 
-    const val BEGIN_TOKEN = "@|"
+    @Property(description = "Sets the begin-token used for creating ANSI streams")
+    var BEGIN_TOKEN = "@|"
+
+    @Property(description = "Sets the end-token used for creating ANSI streams")
+    var END_TOKEN = "|@"
+
     const val CODE_LIST_SEPARATOR = ","
     const val CODE_TEXT_SEPARATOR = " "
-    const val END_TOKEN = "|@"
 
     private val regex1 = CODE_TEXT_SEPARATOR.toRegex()
     private val regex2 = CODE_LIST_SEPARATOR.toRegex()
@@ -49,13 +55,7 @@ object AnsiRenderer {
     private const val BEGIN_TOKEN_LEN = 2
     private const val END_TOKEN_LEN = 2
 
-    private val codeMap: MutableMap<String, AnsiCodeMap> = HashMap(32)
-
-    init {
-        // have to make sure that all the different categories are added to our map.
-        val red = Color.RED
-        val bold = Attribute.BOLD
-    }
+    private val codeMap = mutableMapOf<String, AnsiCodeMap>()
 
     fun reg(anEnum: Enum<*>, codeName: String, isBackgroundColor: Boolean = false) {
         codeMap[codeName] = AnsiCodeMap(anEnum, isBackgroundColor)
@@ -81,11 +81,10 @@ object AnsiRenderer {
      * @param codeName The code name to render
      */
     fun render(ansi: Ansi, codeName: String): Ansi {
-        var ansi = ansi
-
         val ansiCodeMap = codeMap[codeName.uppercase()] ?: error("Invalid ANSI code name: '$codeName'")
+
         if (ansiCodeMap.isColor) {
-            ansi = if (ansiCodeMap.isBackgroundColor) {
+            if (ansiCodeMap.isBackgroundColor) {
                 ansi.bg(ansiCodeMap.color)
             }
             else {
@@ -93,11 +92,9 @@ object AnsiRenderer {
             }
         }
         else if (ansiCodeMap.isAttribute) {
-            ansi = ansi.a(ansiCodeMap.attribute)
+            ansi.a(ansiCodeMap.attribute)
         }
-        else {
-            assert(false) { "Undetermined ANSI code name: '$codeName'" }
-        }
+
         return ansi
     }
 
@@ -161,7 +158,6 @@ object AnsiRenderer {
      * @return an ANSI escape string.
      */
     fun renderCodeNames(codeNames: String): String {
-
         return render(Ansi(), *codeNames.split(regex).dropLastWhile { it.isEmpty() }.toTypedArray()).toString()
     }
 }
