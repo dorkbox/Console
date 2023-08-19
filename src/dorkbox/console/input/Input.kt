@@ -16,6 +16,7 @@
 package dorkbox.console.input
 
 import dorkbox.console.Console
+import dorkbox.console.util.TerminalDetection
 import dorkbox.os.OS
 import dorkbox.os.OS.isWindows
 import org.slf4j.LoggerFactory
@@ -27,22 +28,21 @@ object Input {
     val terminal: Terminal
 
     init {
-        val type = Console.INPUT_CONSOLE_TYPE.uppercase()
         var didFallbackE: Throwable? = null
         var term: Terminal
 
         try {
-            term = when (type) {
-                "MACOS"    -> {
+            term = when (Console.INPUT_CONSOLE_TYPE) {
+                TerminalDetection.MACOS   -> {
                     MacOsTerminal()
                 }
-                "UNIX"    -> {
+                TerminalDetection.UNIX    -> {
                     PosixTerminal()
                 }
-                "WINDOWS" -> {
+                TerminalDetection.WINDOWS -> {
                     WindowsTerminal()
                 }
-                "NONE"    -> {
+                TerminalDetection.NONE    -> {
                     UnsupportedTerminal()
                 }
                 else      -> {
