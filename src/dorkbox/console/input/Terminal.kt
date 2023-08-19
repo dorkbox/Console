@@ -16,17 +16,119 @@
 package dorkbox.console.input
 
 import dorkbox.console.Console
+import dorkbox.console.util.TerminalDetection
+import dorkbox.os.OS
 import org.slf4j.LoggerFactory
 import java.io.IOException
 
 @Suppress("unused")
 abstract class Terminal internal constructor() {
     companion object {
+        private val logger = LoggerFactory.getLogger(Console::class.java)
+        val terminal: Terminal
+
         val EMPTY_LINE = CharArray(0)
 
         const val CONSOLE_ERROR_INIT = "Unable to initialize the input console."
         const val DEFAULT_WIDTH = 80
         const val DEFAULT_HEIGHT = 24
+
+
+        init {
+            var didFallbackE: Throwable? = null
+            var term: Terminal
+
+            try {
+                term = when (Console.INPUT_CONSOLE_TYPE) {
+                    TerminalDetection.MACOS   -> {
+                        MacOsTerminal()
+                    }
+                    TerminalDetection.UNIX    -> {
+                        PosixTerminal()
+                    }
+                    TerminalDetection.WINDOWS -> {
+                        WindowsTerminal()
+                    }
+                    TerminalDetection.NONE    -> {
+                        UnsupportedTerminal()
+                    }
+                    else                      -> {
+                        // AUTO type.
+
+                        // if these cannot be created, because we are in an IDE, an error will be thrown
+
+                        if (OS.isMacOsX) {
+                            MacOsTerminal()
+                        } else {
+                            val IS_CYGWIN = OS.isWindows && System.getenv("PWD") != null && System.getenv("PWD").startsWith("/")
+                            val IS_MSYSTEM = OS.isWindows && System.getenv("MSYSTEM") != null && (System.getenv("MSYSTEM").startsWith("MINGW") || System.getenv("MSYSTEM") == "MSYS")
+                            val IS_CONEMU = (OS.isWindows && System.getenv("ConEmuPID") != null)
+
+
+                            if (OS.isWindows && !IS_CYGWIN && !IS_MSYSTEM && !IS_CONEMU) {
+                                WindowsTerminal()
+                            }
+                            else {
+                                PosixTerminal()
+                            }
+                        }
+                    }
+                }
+            }
+            catch (e: Exception) {
+                didFallbackE = e
+                term = UnsupportedTerminal()
+            }
+
+            terminal = term
+
+            if (terminal is SupportedTerminal) {
+                // enable echo and backspace
+                terminal.setEchoEnabled(Console.ENABLE_ECHO)
+                terminal.setInterruptEnabled(Console.ENABLE_INTERRUPT)
+
+                val consoleThread = Thread(terminal)
+                consoleThread.setDaemon(true)
+                consoleThread.setName("Console Input Reader")
+                consoleThread.start()
+
+                // has to be NOT DAEMON thread, since it must run before the app closes.
+                // alternatively, shut everything down when the JVM closes.
+                val shutdownThread = object : Thread() {
+                    override fun run() {
+                        // called when the JVM is shutting down.
+                        terminal.close()
+
+                        try {
+                            terminal.restore()
+                            // this will 'hang' our shutdown, and honestly, who cares? We're shutting down anyways.
+                            // inputConsole.reader.close(); // hangs on shutdown
+                        }
+                        catch (ignored: IOException) {
+                            ignored.printStackTrace()
+                        }
+                    }
+                }
+                shutdownThread.setName("Console Input Shutdown")
+                shutdownThread.setDaemon(true)
+                Runtime.getRuntime().addShutdownHook(shutdownThread)
+            }
+
+
+
+
+            val debugEnabled = logger.isDebugEnabled
+
+            if (didFallbackE != null && didFallbackE.message != CONSOLE_ERROR_INIT) {
+                logger.error("Failed to construct terminal, falling back to unsupported.", didFallbackE)
+            }
+            else if (debugEnabled && term is UnsupportedTerminal) {
+                logger.debug("Terminal is UNSUPPORTED (best guess). Unable to support single key input. Only line input available.")
+            }
+            else if (debugEnabled) {
+                logger.debug("Created Terminal: ${terminal.javaClass.getSimpleName()} (${terminal.width}w x ${terminal.height}h)")
+            }
+        }
     }
 
     val logger = LoggerFactory.getLogger(javaClass)

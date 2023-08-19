@@ -1,13 +1,13 @@
 Console
 =======
 
-###### [![Dorkbox](https://badge.dorkbox.com/dorkbox.svg "Dorkbox")](https://git.dorkbox.com/dorkbox/Console) [![Github](https://badge.dorkbox.com/github.svg "Github")](https://github.com/dorkbox/Console) [![Gitlab](https://badge.dorkbox.com/gitlab.svg "Gitlab")](https://gitlab.com/dorkbox/Console) [![Bitbucket](https://badge.dorkbox.com/bitbucket.svg "Bitbucket")](https://bitbucket.org/dorkbox/Console)
+###### [![Dorkbox](https://badge.dorkbox.com/dorkbox.svg "Dorkbox")](https://git.dorkbox.com/dorkbox/Console) [![Github](https://badge.dorkbox.com/github.svg "Github")](https://github.com/dorkbox/Console) [![Gitlab](https://badge.dorkbox.com/gitlab.svg "Gitlab")](https://gitlab.com/dorkbox/Console)
 
 
 
 Unbuffered input and ANSI output support for linux, mac, windows. Java 8+
 
-This library is a optimized combination of [JLine](https://github.com/jline/jline2) and [JAnsi](https://github.com/fusesource/jansi). While it is very similar in functionality to what these libraries provide, there are several things that are significantly different.
+This library is the evolution of what [JLine](https://github.com/jline/jline2) should be, and the optimization of [JAnsi](https://github.com/fusesource/jansi). While it is very similar in functionality to what these libraries provide, there are several things that are significantly different.
 
  1. JNA *direct-mapping* instead of custom JNI/shell execution which is [slightly slower than JNI](https://github.com/java-native-access/jna/blob/master/www/DirectMapping.md) but significantly easier to read, modify, debug, and provide support for non-intel architectures.
  1. Complete implementation of common [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code)
@@ -22,7 +22,7 @@ This library is a optimized combination of [JLine](https://github.com/jline/jlin
  1. Solves un-interruptable blocking reads from System.in when in an "unsupported" terminal (ie: anything other than a *nix/windows shell) so one can successfully stop reading from the input stream,
   
   
-- This is for cross-platform use, specifically - linux arm/32/64, mac 32/64, and windows 32/64. Java 8+
+- This is for cross-platform use, specifically - linux arm/32/64, mac 64, and windows 32/64. Java 8+
   
 Windows  
 ![Windows](https://git.dorkbox.com/dorkbox/Console/raw/branch/master/windows%20console.png)  
@@ -57,11 +57,17 @@ Console.ENABLE_BACKSPACE   (type boolean, default value 'true')
 Console.INPUT_CONSOLE_TYPE   (type String, default value 'AUTO')
  - Used to determine what console to use/hook when AUTO is not correctly working.  
    Valid options are:
-     - AUTO - automatically determine which OS/console type to use
-     - UNIX - try to control a UNIX console
-     - WINDOWS - try to control a WINDOWS console
-     - NONE - do not try to control anything, only line input is supported 
+     AUTO - automatically determine which OS/console type to use
+     MACOS - try to control a MACOS console
+     WINDOWS - try to control a WINDOWS console
+     UNIX - try to control a UNIX console
+     NONE - do not try to control anything, only line input is supported
 
+
+Console.AUTO_FLUSH   (type boolean, default value 'true')
+ - Enables the output printstream to automatically flush after every write. NOTE: This is DANGEROUS, as it removes the usefulness of
+     * the backing BufferWriter!
+        
         
 Ansi.restoreSystemStreams()
  - Restores System.err/out PrintStreams to their ORIGINAL configuration. Useful when using ANSI functionality but do not want to hook into the system.
@@ -70,8 +76,7 @@ Ansi.restoreSystemStreams()
 
 
 ```
-Note: This project was inspired (and some parts heavily modified) by the excellent 
-      JLine and JAnsi libraries. Many thanks to their hard work.
+Note: This project was inspired by the excellent JLine and JAnsi libraries. Many thanks to their hard work.
 ```
 
 &nbsp; 

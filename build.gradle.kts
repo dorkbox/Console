@@ -67,6 +67,12 @@ licensing {
         url(Extras.url)
         author(Extras.vendor)
 
+        extra("Mordant", License.APACHE_2) {
+            copyright(2018)
+            author("AJ Alt")
+            url("https://github.com/ajalt/mordant")
+        }
+
         extra("JAnsi", License.APACHE_2) {
             copyright(2009)
             author("Progress Software Corporation")
@@ -74,15 +80,6 @@ licensing {
             author("Jason Dillon")
             author("Hiram Chirino")
             url("https://github.com/fusesource/jansi")
-        }
-
-        extra("JLine2", License.BSD_2) {
-            copyright(2012)
-            author("Marc Prud\'hommeaux <mwp1@cornell.edu>")
-            author("Daniel Doubrovkine")
-            author("Torbjorn Granlund")
-            author("David MacKenzie")
-            url("https://github.com/jline/jline2")
         }
     }
 }
@@ -125,9 +122,10 @@ shadowJar.apply {
 
 dependencies {
     api("com.dorkbox:ByteUtilities:1.14")
-    api("com.dorkbox:PropertyLoader:1.3")
+    api("com.dorkbox:PropertyLoader:1.4")
     api("com.dorkbox:Updates:1.1")
-    api("com.dorkbox:JNA:1.1")
+    api("com.dorkbox:JNA:1.2")
+    api("com.dorkbox:OS:1.8")
     api("com.dorkbox:Utilities:1.44")
 
     api("org.slf4j:slf4j-api:2.0.7")
@@ -137,7 +135,7 @@ dependencies {
     api("net.java.dev.jna:jna-platform:$jnaVersion")
 
     testImplementation("junit:junit:4.13.2")
-    testImplementation("ch.qos.logback:logback-classic:1.4.5")
+    testImplementation("ch.qos.logback:logback-classic:1.2.9") // can run on java 1.8
 }
 
 

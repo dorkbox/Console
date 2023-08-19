@@ -108,7 +108,7 @@ object Console {
      */
     val `in`: Terminal
         get() {
-            return Input.terminal
+            return Terminal.terminal
         }
 
     /**

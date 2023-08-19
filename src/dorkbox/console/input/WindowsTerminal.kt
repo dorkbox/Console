@@ -14,17 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright (c) 2002-2012, the original author or authors.
- *
- * This software is distributable under the BSD license. See the terms of the
- * BSD license in the documentation provided with this software.
- *
- * http://www.opensource.org/licenses/bsd-license.php
- *
- * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
- */
 package dorkbox.console.input
 
 import com.sun.jna.platform.win32.WinBase
@@ -41,35 +30,26 @@ import java.io.IOException
  */
 class WindowsTerminal : SupportedTerminal() {
     companion object {
-        // Console mode constants copied `wincon.h`
-        // There are OTHER options, however they DO NOT work with unbuffered input or we just don't care about them.
-        /**
-         * CTRL+C is processed by the system and is not placed in the input buffer. If the input buffer is being read by ReadFile or
-         * ReadConsole, other control keys are processed by the system and are not returned in the ReadFile or ReadConsole buffer. If the
-         * ENABLE_LINE_INPUT mode is also enabled, backspace, carriage return, and linefeed characters are handled by the system.
-         */
-        private const val PROCESSED_INPUT = 1
-
         // output stream for "echo" to goto
         private val OUT = System.out
     }
 
-    private val console: WinNT.HANDLE
-    private val outputConsole: WinNT.HANDLE
+    private val console = Kernel32.GetStdHandle(Wincon.STD_INPUT_HANDLE)
+    private val outputConsole = Kernel32.GetStdHandle(Wincon.STD_OUTPUT_HANDLE)
     private val info = CONSOLE_SCREEN_BUFFER_INFO()
     private val inputRecords = INPUT_RECORD.ByReference()
     private val reference = IntByReference()
 
     private val originalMode: Int
+
+    @Volatile
     private var echoEnabled = false
 
     init {
-        console = Kernel32.GetStdHandle(Wincon.STD_INPUT_HANDLE)
         if (console === WinBase.INVALID_HANDLE_VALUE) {
             throw IOException("Unable to get input console handle.")
         }
 
-        outputConsole = Kernel32.GetStdHandle(Wincon.STD_OUTPUT_HANDLE)
         if (outputConsole === WinBase.INVALID_HANDLE_VALUE) {
             throw IOException("Unable to get output console handle.")
         }
@@ -80,6 +60,7 @@ class WindowsTerminal : SupportedTerminal() {
         }
 
         originalMode = mode.value
+
         val newMode = 0 // this is raw everything, not ignoring ctrl-c
         Kernel32.ASSERT(Kernel32.SetConsoleMode(console, newMode), CONSOLE_ERROR_INIT)
     }
@@ -118,19 +99,25 @@ class WindowsTerminal : SupportedTerminal() {
         val mode = IntByReference()
         Kernel32.GetConsoleMode(console, mode)
 
+        /**
+         * CTRL+C is processed by the system and is not placed in the input buffer. If the input buffer is being read by ReadFile or
+         * ReadConsole, other control keys are processed by the system and are not returned in the ReadFile or ReadConsole buffer. If the
+         * ENABLE_LINE_INPUT mode is also enabled, backspace, carriage return, and linefeed characters are handled by the system.
+         */
         val newMode: Int = if (enabled) {
             // Enable  Ctrl+C
-            mode.value or PROCESSED_INPUT
+            mode.value or 1
         }
         else {
             // Disable Ctrl+C
-            mode.value and PROCESSED_INPUT.inv()
+            mode.value and 1.inv()
         }
         Kernel32.ASSERT(Kernel32.SetConsoleMode(console, newMode), CONSOLE_ERROR_INIT)
     }
 
     override fun doRead(): Int {
         val input = readInput()
+
         if (echoEnabled) {
             val asChar = input.toChar()
             if (asChar == '\n') {

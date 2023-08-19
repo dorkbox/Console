@@ -112,6 +112,7 @@ class MacOsTerminal : SupportedTerminal() {
         }
     }
 
+
     /**
      * Restore the original terminal configuration, which can be used when shutting down the console reader. The ConsoleReader cannot be
      * used after calling this method.
@@ -143,7 +144,6 @@ class MacOsTerminal : SupportedTerminal() {
                     size.ws_row.toInt()
                 }
             }
-
         }
 
     /**

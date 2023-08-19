@@ -5,6 +5,12 @@
      Dorkbox LLC
 
    Extra license information
+     - Mordant - 
+       [The Apache Software License, Version 2.0]
+       https://github.com/ajalt/mordant
+       Copyright 2018
+         AJ Alt
+
      - JAnsi - 
        [The Apache Software License, Version 2.0]
        https://github.com/fusesource/jansi
@@ -13,15 +19,6 @@
          Joris Kuipers
          Jason Dillon
          Hiram Chirino
-
-     - JLine2 - 
-       [BSD 2-Clause "Simplified" or "FreeBSD" license]
-       https://github.com/jline/jline2
-       Copyright 2012
-         Marc Prud'hommeaux <mwp1@cornell.edu>
-         Daniel Doubrovkine
-         Torbjorn Granlund
-         David MacKenzie
 
      - SLF4J - Simple facade or abstraction for various logging frameworks
        [MIT License]
@@ -171,12 +168,6 @@
          Dorkbox LLC
 
        Extra license information
-         - SLF4J - Simple facade or abstraction for various logging frameworks
-           [MIT License]
-           https://www.slf4j.org
-           Copyright 2023
-             QOS.ch
-
          - Kotlin - 
            [The Apache Software License, Version 2.0]
            https://github.com/JetBrains/kotlin
@@ -196,6 +187,12 @@
            https://github.com/twall/jna
            Copyright 2023
              Timothy Wall
+
+         - SLF4J - Simple facade or abstraction for various logging frameworks
+           [MIT License]
+           https://www.slf4j.org
+           Copyright 2023
+             QOS.ch
 
          - OS - Information about the system, Java runtime, OS, Window Manager, and Desktop Environment.
            [The Apache Software License, Version 2.0]
@@ -226,6 +223,36 @@
                      JetBrains s.r.o. and Kotlin Programming Language contributors
                    Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
                    See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
+
+         - Updates - Software Update Management
+           [The Apache Software License, Version 2.0]
+           https://git.dorkbox.com/dorkbox/Updates
+           Copyright 2021
+             Dorkbox LLC
+
+           Extra license information
+             - Kotlin - 
+               [The Apache Software License, Version 2.0]
+               https://github.com/JetBrains/kotlin
+               Copyright 2020
+                 JetBrains s.r.o. and Kotlin Programming Language contributors
+               Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
+               See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
+
+     - OS - Information about the system, Java runtime, OS, Window Manager, and Desktop Environment.
+       [The Apache Software License, Version 2.0]
+       https://git.dorkbox.com/dorkbox/OS
+       Copyright 2023
+         Dorkbox LLC
+
+       Extra license information
+         - Kotlin - 
+           [The Apache Software License, Version 2.0]
+           https://github.com/JetBrains/kotlin
+           Copyright 2020
+             JetBrains s.r.o. and Kotlin Programming Language contributors
+           Kotlin Compiler, Test Data+Libraries, and Tools repository contain third-party code, to which different licenses may apply
+           See: https://github.com/JetBrains/kotlin/blob/master/license/README.md
 
          - Updates - Software Update Management
            [The Apache Software License, Version 2.0]
