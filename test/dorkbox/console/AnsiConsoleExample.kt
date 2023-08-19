@@ -151,8 +151,8 @@ object AnsiConsoleExample {
         println()
         println("Now testing the input console LINE input. 'q' to quit")
 
-        var line: String
-        while (Console.`in`().readLine().also { line = it!! } != "q") {
+        var line: String?
+        while (Console.`in`.readLine().also { line = it } != "q") {
             System.err.println("line: $line")
         }
     }
