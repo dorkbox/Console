@@ -121,12 +121,12 @@ shadowJar.apply {
 
 
 dependencies {
-    api("com.dorkbox:ByteUtilities:1.14")
+    api("com.dorkbox:ByteUtilities:2.0")
     api("com.dorkbox:PropertyLoader:1.4")
     api("com.dorkbox:Updates:1.1")
     api("com.dorkbox:JNA:1.2")
     api("com.dorkbox:OS:1.8")
-    api("com.dorkbox:Utilities:1.44")
+    api("com.dorkbox:Utilities:1.46")
 
     api("org.slf4j:slf4j-api:2.0.7")
 
