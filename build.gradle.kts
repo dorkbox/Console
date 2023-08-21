@@ -43,7 +43,7 @@ object Extras {
     // set for the project
     const val description = "Unbuffered input and ANSI output support for Linux, MacOS, or Windows for Java 8+"
     const val group = "com.dorkbox"
-    const val version = "4.0"
+    const val version = "4.1"
 
     // set as project.ext
     const val name = "Console"

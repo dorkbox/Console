@@ -90,7 +90,7 @@ Maven Info
     <dependency>
       <groupId>com.dorkbox</groupId>
       <artifactId>Console</artifactId>
-      <version>4.0</version>
+      <version>4.1</version>
     </dependency>
 </dependencies>
 ```
@@ -100,7 +100,7 @@ Gradle Info
 ```
 dependencies {
     ...
-    implementation("com.dorkbox:Console:4.0")
+    implementation("com.dorkbox:Console:4.1")
 }
 ```
 
