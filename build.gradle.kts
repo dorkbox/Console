@@ -32,11 +32,11 @@ plugins {
     id("com.dorkbox.GradleUtils") version "3.17"
     id("com.dorkbox.Licensing") version "2.26"
     id("com.dorkbox.VersionUpdate") version "2.8"
-    id("com.dorkbox.GradlePublish") version "1.18"
+    id("com.dorkbox.GradlePublish") version "1.20"
 
     id("com.github.johnrengelman.shadow") version "8.1.1"
 
-    kotlin("jvm") version "1.8.0"
+    kotlin("jvm") version "1.9.0"
 }
 
 object Extras {
