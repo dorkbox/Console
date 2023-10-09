@@ -15,8 +15,6 @@
  */
 
 
-import java.time.Instant
-
 ///////////////////////////////
 //////    PUBLISH TO SONATYPE / MAVEN CENTRAL
 ////// TESTING : (to local maven repo) <'publish and release' - 'publishToMavenLocal'>
@@ -24,13 +22,12 @@ import java.time.Instant
 ///////////////////////////////
 
 gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS   // always show the stacktrace!
-gradle.startParameter.warningMode = WarningMode.All
 
 plugins {
     java
 
-    id("com.dorkbox.GradleUtils") version "3.17"
-    id("com.dorkbox.Licensing") version "2.26"
+    id("com.dorkbox.GradleUtils") version "3.18"
+    id("com.dorkbox.Licensing") version "2.28"
     id("com.dorkbox.VersionUpdate") version "2.8"
     id("com.dorkbox.GradlePublish") version "1.20"
 
